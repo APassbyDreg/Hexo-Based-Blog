@@ -185,7 +185,7 @@ fb_app_id:
 # profile
 profile:
   enabled: true # Whether to show profile bar
-  avatar: images/avatar.jpg
+  avatar: images/avatar.png
   gravatar: # Gravatar email address, if you enable Gravatar, your avatar config will be overriden
   author: Martin Z He
   author_title: coder
@@ -195,7 +195,8 @@ profile:
   # Social Links
   social:
     links:
-      github: https://github.com/APassbyDreg
+      GitHub: https://github.com/APassbyDreg
+      BiliBili: https://space.bilibili.com/8020246
       # weibo: http://weibo.com/cofess
       # twitter: https://twitter.com/iwebued
       # facebook: /
@@ -205,33 +206,33 @@ profile:
     link_tooltip: true # enable the social link tooltip, options: true, false
   # My Skills 
   skills:
-    Git: ★★★☆☆
-    Gulp: ★★★☆☆
-    Javascript: ★★★☆☆
-    HTML+CSS: ★★★☆☆
-    Bootstrap: ★★★☆☆
-    ThinkPHP: ★★★☆☆
-    平面设计: ★★★☆☆
+    # Git: ★★★☆☆
+    # Gulp: ★★★☆☆
+    # Javascript: ★★★☆☆
+    # HTML+CSS: ★★★☆☆
+    # Bootstrap: ★★★☆☆
+    # ThinkPHP: ★★★☆☆
+    # 平面设计: ★★★☆☆
   # My Personal Links
   links:
-    Github: https://github.com/cofess
-    Blog: http://blog.cofess.com
-    微博: http://weibo.com/cofess
-    花瓣: http://huaban.com/cofess
-    Behance: https://www.behance.net/cofess
+    GitHub: https://github.com/APassbyDreg
+    BiliBili: https://space.bilibili.com/8020246
+    Blog: http://blog.apassbydreg.work
+    # 微博: http://weibo.com/cofess
+    # 花瓣: http://huaban.com/cofess
+    # Behance: https://www.behance.net/cofess
   # My Personal Labels
   labels:
-    - 前端
-    - 前端开发
-    - 前端重构
-    - Web前端
-    - 网页重构
+    - AI
+    - CG
+    - GameDev
+    - PV
   # My Personal Works
   works:
-    name:
-      link: http://www.example.com
-      date: 2016
+    # name:
+    #   link: http://www.example.com
+    #   date: 2016
   # My Personal Projects
   projects:
-    cofess/gulp-startpro: https://github.com/cofess/gulp-startpro
-    cofess/hexo-theme-pure: https://github.com/cofess/hexo-theme-pure
+    # cofess/gulp-startpro: https://github.com/cofess/gulp-startpro
+    # cofess/hexo-theme-pure: https://github.com/cofess/hexo-theme-pure

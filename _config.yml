@@ -103,6 +103,6 @@ theme: pure
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repo: https://github.com/APassbyDreg/Hexo-Blog
-  branch: main
+  repo: https://github.com/APassbyDreg/Hexo-Based-Blog
+  branch: pages
   message: update blog content
