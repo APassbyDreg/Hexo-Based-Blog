@@ -2,7 +2,7 @@
 	<% var tooltipClass = theme.profile.social.link_tooltip === false ? '' : 'data-toggle=tooltip data-placement=top'; %>
     <ul class="social-links">
     	<% for(var i in theme.profile.social.links) { %>
-        <li><a href="<%- url_for(theme.profile.social.links[i]) %>" target="_blank" title="<%= titlecase(i) %>" <%= tooltipClass %>><i class="custom-icon icon-<%= i %>-line"></i></a></li>
+        <li><a href="<%- url_for(theme.profile.social.links[i]) %>" target="_blank" title="<%= titlecase(i) %>" <%= tooltipClass %>><i class="custom-icon icon-<%= i.toLowerCase() %>-line"></i></a></li>
         <% } %>
     </ul>
 <% } %>
