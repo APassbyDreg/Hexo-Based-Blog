@@ -5,4 +5,10 @@ layout: about
 comments: false
 sidebar: custom
 ---
-个人详细介绍
+
+21 世纪的第一批 00 后，本职 Coding ，偶尔做做视频。
+
+个人主页：
+
+- [BiliBili](https://space.bilibili.com/8020246)
+- [GitHub](https://github.com/APassbyDreg)

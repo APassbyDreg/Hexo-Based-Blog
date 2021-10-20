@@ -31,7 +31,7 @@ site:
     width: 40
     height: 40
     url: ../images/logo.png
-  title: Hexo # 页面title
+  title: Blog of Martin Z He # 页面 title
   favicon: /favicon.png
   board: <p>Welcome!</p> # 站点公告
   copyright: false # 底部版权信息
