@@ -110,3 +110,20 @@ deploy:
   repo: https://github.com/APassbyDreg/Hexo-Based-Blog
   branch: pages
   message: update blog content
+
+markdown_it_plus:
+  highlight: true
+  html: true
+  xhtmlOut: true
+  breaks: true
+  langPrefix:
+  linkify: true
+  typographer:
+  quotes: 『』「」
+  plugins:
+    - plugin:
+        name: markdown-it-katex
+        enable: false
+    - plugin:
+        name: markdown-it-mark
+        enable: true
