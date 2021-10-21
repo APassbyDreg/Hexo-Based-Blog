@@ -119,7 +119,7 @@ class SamplerIntegrator : public Integrator {
 
 ## 1.3.4 主渲染循环
 
-![https://pbr-book.org/3ed-2018/Introduction/Class%20Relationships.svg](https://pbr-book.org/3ed-2018/Introduction/Class%20Relationships.svg)
+<center><img src="https://pbr-book.org/3ed-2018/Introduction/Class%20Relationships.svg" style="max-height: 25vh; margin: 10px;"/></center>
 
 ```cpp
 void SamplerIntegrator::Render(const Scene &scene) {
@@ -144,7 +144,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
 这是一种基础的光线追踪算法使用的积分器，其 `Li` 函数的运行流程如下
 
-![https://pbr-book.org/3ed-2018/Introduction/Surface%20Integration%20Class%20Relationships.svg](https://pbr-book.org/3ed-2018/Introduction/Surface%20Integration%20Class%20Relationships.svg)
+
+<center><img src="https://pbr-book.org/3ed-2018/Introduction/Surface%20Integration%20Class%20Relationships.svg" style="max-height: 25vh; margin: 10px;"/></center>
 
 # 1.4 Parallelization of PBRT
 
