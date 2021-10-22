@@ -2,7 +2,8 @@
 title: 基于 Optix 的渲染器框架 | Optix Based Renderer Framework
 date: 2021-10-20 13:49:29
 categories: 
-- coding
+- programming
+- projects
 tags: 
 - CG
 - render

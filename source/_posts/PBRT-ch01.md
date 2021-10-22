@@ -2,10 +2,12 @@
 title: PBRT 第一章笔记 | Notes for PBRT Chapter 01 - Introduction
 date: 2021-10-22 01:42:44
 categories: 
-- coding
+- programming
+- reading notes
 tags:
 - CG
 - render
+- PBRT
 toc: true
 ---
 

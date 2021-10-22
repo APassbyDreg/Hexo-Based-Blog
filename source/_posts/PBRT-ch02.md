@@ -2,10 +2,12 @@
 title: PBRT 第二章笔记（基础篇） | Notes for PBRT Chapter 02 - Geometry and Transforms (basis)
 date: 2021-10-22 02:07:09
 categories: 
-- coding
+- programming
+- reading notes
 tags:
 - CG
 - render
+- PBRT
 toc: true
 ---
 
