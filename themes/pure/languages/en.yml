@@ -20,7 +20,7 @@ page:
   categories: Categories
   tag: Tag
   tags: Tags
-  tagcloud: Tag Cloud
+  tagcloud: Tags
   uncategorized: Uncategorized
   repository: Repository
   douban: Douban
@@ -42,7 +42,7 @@ widget:
   archive: Archive
   tags: Tags
   categories: Categories
-  tagcloud: Tag Cloud
+  tagcloud: Tags
   recent_posts: Recent Posts
 profile: 
   follow: Follow
