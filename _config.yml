@@ -106,9 +106,13 @@ theme: pure
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
-  type: git
+- type: git
   repo: https://github.com/APassbyDreg/Hexo-Based-Blog
   branch: pages
+  message: update blog content
+- type: git
+  repo: https://gitee.com/martin_z_he/mzh-blog-cn.git
+  branch: master
   message: update blog content
 
 markdown_it_plus:

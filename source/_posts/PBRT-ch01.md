@@ -157,7 +157,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 - 工具类：如 `MemoryArena, RNG, Sampler` 等类型一般在每个线程中单独生成并使用，不做跨线程通信
 - 预处理函数：由于 PBRT 的 Parsing 阶段一般是串行执行的，这类在初始化时调用的预处理函数一般也不是线程安全的
 
-# **1.5 How to Proceed through This Book**
+# 1.5 How to Proceed through This Book
 
 教你怎么用这本书的一节，此处略
 
