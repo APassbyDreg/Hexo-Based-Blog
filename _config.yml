@@ -131,3 +131,6 @@ markdown_it_plus:
     - plugin:
         name: markdown-it-mark
         enable: true
+    - plugin:
+        name: markdown-it-table-of-contents
+        enable: true
