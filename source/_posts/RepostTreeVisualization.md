@@ -9,6 +9,8 @@ tags:
 - web
 ---
 
+[[toc]]
+
 ![sample](sample.png)
 
 ## 简介

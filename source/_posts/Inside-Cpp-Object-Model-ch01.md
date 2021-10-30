@@ -11,6 +11,8 @@ tags:
 toc: true
 ---
 
+[[toc]]
+
 # 第一章 - 关于对象 | Object Lessons
 
 ## 1.1 C++ 对象模式

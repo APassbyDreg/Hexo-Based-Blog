@@ -9,6 +9,8 @@ tags:
 toc: true
 ---
 
+[[toc]]
+
 ![sample](sample.png)
 
 > 本文使用 Unity >= 2020.3.19 的 URP 模板完成
@@ -162,7 +164,7 @@ float arcAmp = currArcMaxHeight * animationTime;
 
 ### Arc
 
-<center><video src="arc.mp4" autoplay muted loop></center>
+<center><video src="arc.mp4" autoplay muted loop style="margin: 10px 1px"></center>
 
 视频中第一个效果是一个反复出现的弧形，这里我们使用一个简单的二次函数来拟合它：
 
@@ -180,7 +182,7 @@ pos += currArcTangentDir.y * y * arcAmpAtT * tangentRandomScale.Evaluate(t);
 
 ### Sine
 
-<center><video src="sine.mp4" autoplay muted loop></center>
+<center><video src="sine.mp4" autoplay muted loop style="margin: 10px 1px"></center>
 
 第二个效果是一个并不完整的波，这里我们使用一个切割过的三角函数拟合它：
 
@@ -215,7 +217,7 @@ pos += sineAmpAtT * Mathf.Cos(sineRotationDeg) * y * tangentRandomScale.Evaluate
 
 ### 随机扰动
 
-<center><video src="random.mp4" autoplay muted loop></center>
+<center><video src="random.mp4" autoplay muted loop style="margin: 10px 1px"></center>
 
 随机扰动包括了位置上的随机性和宽度上的随机性，均通过简单加上随机数的方式解决。
 
@@ -238,4 +240,4 @@ full_curve.AddKey(t, width);
 
 将脚本拖动到空对象上、增加一个 `LineRenderer` 、把材质扔上去，你就获得了一根闪电。通过将不同参数的闪电叠加在一起，你就可以获得一个看起来还不错的闪电效果。
 
-<center><video src="sample.mp4" autoplay muted loop></center>
+<center><video src="sample.mp4" autoplay muted loop style="margin: 10px 1px"></center>

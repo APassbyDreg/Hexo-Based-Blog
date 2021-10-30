@@ -11,6 +11,8 @@ tags:
 toc: true
 ---
 
+[[toc]]
+
 # 第二章 - 构造函数语义学 | The Semantics of Constructors
 
 ## 2.1 Default Constructor

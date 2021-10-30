@@ -11,6 +11,8 @@ tags:
 toc: true
 ---
 
+[[toc]]
+
 # 3.1 Basic Shape Interface
 
 `Shape` 基类的完整定义如下：

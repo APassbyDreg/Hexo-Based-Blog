@@ -11,6 +11,8 @@ tags:
 toc: true
 ---
 
+[[toc]]
+
 # 2.1 Coordinate Systems
 
 PBRT 使用常规的三维坐标系

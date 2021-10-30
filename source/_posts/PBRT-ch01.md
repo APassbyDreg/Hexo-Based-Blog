@@ -11,6 +11,8 @@ tags:
 toc: true
 ---
 
+[[toc]]
+
 # 1.1 Literate Programming
 
 这部分与网页版的 PBRT 展示方式有关，此处跳过
