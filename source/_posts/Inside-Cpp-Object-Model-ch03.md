@@ -13,11 +13,9 @@ toc: true
 
 [[toc]]
 
-# Ch03 数据语义学
-
 在这一章中，类的 data members 和 class hierarchy 是中心议题。一个类的 data members 可以表现这个类在运行中的某种状态，而 data members 的 static 与否则体现了这个状态是被单个实例使用还是所有的该类的实例所使用。
 
-## 3.1 Data Members 的绑定
+# 3.1 Data Members 的绑定
 
 在 C++ 最早的编译器上，变量定义的位置会影响事实上获取的值。考虑如下代码：
 
@@ -54,21 +52,21 @@ public:
 };
 ```
 
-## 3.2 Data Members 的布局
+# 3.2 Data Members 的布局
 
 C++ Standard 要求：在同一个 access section（即 `public, private, protected` ）中，较晚出现的变量在内存中有较高的地址。然而，标准并不要求各个变量一定要连续排列，也没有要求在不同的 access section 之间的变量需要有明确的先后关系。
 
 大多数编译器选择把多个 access section 合并在一起，并按照声明的次序形成一个连续区块。access sections 的数量并不会引起额外负担。
 
-## 3.3 Data Member 的存取
+# 3.3 Data Member 的存取
 
-### 3.3.1 Static Data Members
+## 3.3.1 Static Data Members
 
 所有 static 变量被编译器提出于类外，被视为只在该类的生命范围内可见的全局变量。每个 static data member 只有一个实体，它被存放于程序的 data segment 中。每次程序操作该变量，编译器会将其转化为对该唯一的 extern 实体的直接操作。
 
 无论是从 class object 使用 member selection operator（即 `.` 运算符）、还是从一个复杂的派生类中取用、或者从函数的返回值取用，每一个这种变量的使用并不会导致任何时间或者空间上的额外负担。
 
-### 3.3.2 Nonstatic Data Members
+## 3.3.2 Nonstatic Data Members
 
 这些变量直接存放在每个 class object 中，必须通过 class object 才能对它们进行操作。编译器会将 class object 的起始地址加上该变量的偏移量操作。即：
 
@@ -84,20 +82,20 @@ Sample s;
 
 在使用指针或者引用实现多态的情况，对于来自 struct member 、单一  class member 、单继承、多继承的 data members，这些偏移量也可以在编译期间获知。而对于使用了 virtual base class 虚拟继承而来的变量，确认 offset 的过程必须延迟到执行期才能解决。
 
-## 3.4 继承与 Data Members
+# 3.4 继承与 Data Members
 
 在 C++ 继承模型中，一个派生类对象所表现出来的东西是其自己加上其基类的总和。但 derived class members 和 base class members 的排列次序并无规定。在大部分编译器上，基类的变量总是先出现，但一旦碰上 virtual base class 就说不准了。
 
 本节讨论了不同情况下的 data members 的排列情况
 
-### 3.4.1 只有继承，没有多态
+## 3.4.1 只有继承，没有多态
 
 这种不含多态的情况称为具体继承（ concrete inheritance ，与虚继承相对）。一般而言，这种情况并不会增加额外开销。然而，需要注意的是这种写法可能带来一些问题：
 
 1. 容易重复设计出一些作用相同的函数
 2. 由于要求继承下来的类的完整性，可能累加不必要的 padding 从而带来额外的空间开销
 
-### 3.4.2 含有多态的继承
+## 3.4.2 含有多态的继承
 
 一旦引入多态，势必要增加额外开销，包括了：
 
@@ -122,7 +120,7 @@ Sample s;
 
 <center><img src="https://pic4.zhimg.com/80/v2-886b7c232a54024aa2a211a3e4f2f0bf.jpg" style="max-height: 30vh; margin: 10px;"/></center>
 
-### 3.4.3 多继承
+## 3.4.3 多继承
 
 在将虚指针置于尾部时，单继承的派生类和基类的起始地址一样·，这是一种「自然」的继承情况（其实在将指针置于头部时对于大多数编译器也满足这一情况）。
 
@@ -134,7 +132,7 @@ Sample s;
 
 <center><img src="multi-inheritance-example.png" style="max-height: 40vh; margin: 10px;"/></center>
 
-### 3.4.4 虚拟继承
+## 3.4.4 虚拟继承
 
 多重继承在语义上的副作用在于它必须支持某种形式的 shared subobject 继承，一个典型的例子是最早的 iostream 库：
 
@@ -161,13 +159,13 @@ class iostream : public istream, public ostream { ... };
 
 因为虚拟继承会产生额外的开销，所以对于它而言最有效的运用方式是使用一个抽象的 virtual base class，而其中没有任何 data member
 
-## 3.5 对象成员的效率
+# 3.5 对象成员的效率
 
 在没有继承关系的情况下，如果打开优化（这是为了避免出现因为编译器的策略原因出现的扰动），所有对象成员的使用效率是完全一致的。这在可以直接确定数据地址的单一继承下，情况也是一样的。
 
 然而，一旦引入虚拟继承，测试中所有的编译器都歇菜了。哪怕访问的成员是一个可以在编译期间就能确定地址的非多态对象，虽然不开优化的情况下效率变化并不大，但打开优化之后的效率仍然有显著的降低。这可能说明了间接性会严重影响「将运算移向寄存器或缓存执行」的优化能力。
 
-## 3.6 指向 Data Members 的指针
+# 3.6 指向 Data Members 的指针
 
 使用语法 `&Class::data_member_name` 可以获取该成员变量在类内的指针（偏移量）。并使用 `class_object_ptr->(*data_member_ptr)`  应用这个指针。
 
