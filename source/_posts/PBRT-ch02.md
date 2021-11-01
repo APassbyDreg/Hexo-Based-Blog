@@ -147,7 +147,7 @@ typedef Bounds3<int>   Bounds3i;
 
 一个包围盒可以由对角线上的两个点 `pMix, pMax` 表示如图
 
-<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/AABB.svg" style="max-height: 25vh; margin: 10px;"/></center>
+<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/AABB.svg" style="max-height: 25vh; margin: 10px 0;"/></center>
 
 包围盒可以初始化为整个空间、一个点或根据给定的两点确定包围盒，它同样重载了中括号函数以方便访问八个角点的位置
 
@@ -270,7 +270,7 @@ $$R_z(\theta) =
 
 ## 2.7.6 基于任意旋转轴的旋转
 
-<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Rotate%20arbitrary%20axis.svg" style="max-height: 25vh; margin: 10px;"/></center>
+<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Rotate%20arbitrary%20axis.svg" style="max-height: 25vh; margin: 10px 0;"/></center>
 
 由给定向量和旋转轴可以构成一个局部坐标系，在局部坐标系下旋转并利用变换的合成方法结合即可，PBRT 中的代码如下
 
@@ -304,7 +304,7 @@ Transform Rotate(Float theta, const Vector3f &axis) {
 
 这是一个常用的摄像机相关变换，给定摄像机的位置、观察方向和摄像机的上侧向量即可得到一个从世界坐标到以相机为中心的坐标系变换矩阵。
 
-<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Viewing%20transform.svg" style="max-height: 25vh; margin: 10px;"/></center>
+<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Viewing%20transform.svg" style="max-height: 25vh; margin: 10px 0;"/></center>
 
 由图中以及变换矩阵的定义可知：
 
@@ -495,7 +495,7 @@ public:
 };
 ```
 
-<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Local%20differential%20geometry.svg" style="max-height: 25vh; margin: 10px;"/></center>
+<center><img src="https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Local%20differential%20geometry.svg" style="max-height: 25vh; margin: 10px 0;"/></center>
 
 除了交点和交点法线外，这一类型中还储存了贴图位置 uv 、交点和法线关于 uv 的偏导数。
 

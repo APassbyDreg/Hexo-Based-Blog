@@ -23,7 +23,7 @@ toc: true
     > 
 4. 每个 class object 包含一个指向 base classes 表的指针（bptr）
 
-<center><img src="example.png" style="max-height: 40vh"/></center>
+<center><img src="example.png" style="max-height: 40vh; margin: 10px 0;"/></center>
 
 
 # 1.2 关键词差异

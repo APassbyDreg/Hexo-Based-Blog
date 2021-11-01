@@ -110,15 +110,15 @@ Sample s;
 
 - vptr 在尾部：继承了一个含有虚函数的类
 
-<center><img src="vptr-at-the-back.png" style="max-height: 30vh; margin: 10px;"/></center>
+<center><img src="vptr-at-the-back.png" style="max-height: 30vh; margin: 10px 0;"/></center>
 
 - vptr 在头部：继承自一个不含虚函数的类，但类中包含虚函数
 
-<center><img src="vptr-at-the-front.png" style="max-height: 30vh; margin: 10px;"/></center>
+<center><img src="vptr-at-the-front.png" style="max-height: 30vh; margin: 10px 0;"/></center>
 
 特别地，以 g++ 在 c++11 标准下的编译结果为例，内存布局可能是这样的：
 
-<center><img src="https://pic4.zhimg.com/80/v2-886b7c232a54024aa2a211a3e4f2f0bf.jpg" style="max-height: 30vh; margin: 10px;"/></center>
+<center><img src="https://pic4.zhimg.com/80/v2-886b7c232a54024aa2a211a3e4f2f0bf.jpg" style="max-height: 30vh; margin: 10px 0;"/></center>
 
 ## 3.4.3 多继承
 
@@ -130,7 +130,7 @@ Sample s;
 
 一种多重继承的示意图如下：
 
-<center><img src="multi-inheritance-example.png" style="max-height: 40vh; margin: 10px;"/></center>
+<center><img src="multi-inheritance-example.png" style="max-height: 40vh; margin: 10px 0;"/></center>
 
 ## 3.4.4 虚拟继承
 
