@@ -1,5 +1,5 @@
 ---
-title: PBRT 第四章笔记（基础篇） | Notes for PBRT Chapter 04 - Primitives and Intersection Acceleration (basis)
+title: PBRT 第四章笔记 | Notes for PBRT Chapter 04 - Primitives and Intersection Acceleration
 date: 2021-10-31 00:58:53
 categories: 
 - programming
