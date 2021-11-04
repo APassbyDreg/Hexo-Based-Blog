@@ -10,7 +10,7 @@ tags:
 toc: true
 ---
 
-[[toc]]
+
 
 <center style="padding: 10px 0" ><video src="sample.mp4" muted loop autoplay/></center>
 

@@ -11,8 +11,6 @@ tags:
 toc: true
 ---
 
-[[toc]]
-
 # 4.1 Primitive Interface and Geometric Primitives
 
 抽象的 `Primitive` 基类提供了连接几何系统和着色系统的桥梁

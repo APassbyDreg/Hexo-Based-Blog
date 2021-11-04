@@ -11,8 +11,6 @@ tags:
 toc: true
 ---
 
-[[toc]]
-
 # 3.1 Basic Shape Interface
 
 `Shape` 基类的完整定义如下：
@@ -318,7 +316,7 @@ y &=x_{r} \sin \phi+y_{r} \cos \phi \\
 z &=(1-v) z_{1}+v z_{2}
 \end{aligned}$$
 
-# 3.6 **Triangle Meshes**
+# 3.6 Triangle Meshes
 
 三角形是 CG 领域中最常用的物体表示方法之一。
 
@@ -494,14 +492,14 @@ isect->SetShadingGeometry(ss, ts, dndu, dndv, true);
 
 使用叉乘模长的一半求面积
 
-# 3.7 Curves
+# 3.7 Curves ⚠️
 
 这部分描述了曲线类型的形状，容我以后再看。
 
-# 3.8 Subdivision Surfaces
+# 3.8 Subdivision Surfaces ⚠️
 
 这部分描述了细分表面类型的形状，容我以后再看。
 
-# 3.9 Managing Rounding Error
+# 3.9 Managing Rounding Error ⚠️
 
 这部分描述了 PBRT 是解决浮点错误的方法，容我以后再看。

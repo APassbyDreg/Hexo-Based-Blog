@@ -11,7 +11,7 @@ tags:
 toc: true
 ---
 
-[[toc]]
+
 
 # 1.1 Literate Programming
 

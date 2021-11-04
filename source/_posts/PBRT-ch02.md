@@ -11,7 +11,7 @@ tags:
 toc: true
 ---
 
-[[toc]]
+
 
 # 2.1 Coordinate Systems
 
@@ -439,7 +439,7 @@ Transform Transform::operator*(const Transform &t2) const {
 
 当行列式值为负时，表示手性发生了转换
 
-# 2.9 Animating Transformations
+# 2.9 Animating Transformations ⚠️
 
 这部分包括了变换动画、四元数、变化的包围盒等内容，容我以后再看
 

@@ -11,7 +11,7 @@ tags:
 toc: true
 ---
 
-[[toc]]
+
 
 # 2.1 Default Constructor
 

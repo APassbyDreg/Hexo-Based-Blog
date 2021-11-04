@@ -11,7 +11,7 @@ tags:
 toc: true
 ---
 
-[[toc]]
+
 
 在这一章中，类的 data members 和 class hierarchy 是中心议题。一个类的 data members 可以表现这个类在运行中的某种状态，而 data members 的 static 与否则体现了这个状态是被单个实例使用还是所有的该类的实例所使用。
 
