@@ -54,12 +54,12 @@ Camera 类型中最重要的函数即是 `GenerateRay, GenerateRayDifferential` 
 
 <center><img src="https://pbr-book.org/3ed-2018/Camera_Models/Camera%20coordinate%20spaces.svg" style="max-height: 30vh; margin: 10px"/></center>
 
-CG 中最基础的问题之一就是如何将三维空间投影到二维平面表示。在大部分解决方案中，均使用了一个 $4 \times 4$ 的投影变换矩阵将三维空间的一部分区域投影到 Normalized device coordinate (NDC) 空间中。这个空间是一个单位立方体（虽然有的地方可能使用的坐标范围是 $[-1, 1]$ ），通过这个空间的 xy 轴信息即对应了屏幕上的 uv 坐标。
+CG 中最基础的问题之一就是如何将三维空间投影到二维平面表示。在大部分解决方案中，均使用了一个 $4 \times 4$ 的投影变换矩阵将三维空间的一部分区域投影到 Normalized device coordinate (NDC) 空间中。这个空间是一个单位立方体（虽然有的地方可能使用的坐标范围是 $[-1, 1]$ ），通过这个空间的 $xy$ 轴信息即对应了屏幕上的 uv 坐标。
 
 作为这类摄像机的基类的 `ProjectiveCamera` 类，在 `Camera` 类的基础上增加了镜头半径、视窗大小、对焦距离等参数。在这个类型中有三种空间：
 
 - 相机空间：以相机为中心的坐标系
-- 屏幕空间：由输入的 `screenWindow` 决定的屏幕 xy 坐标范围包围盒空间，一般指的是 NDC 空间
+- 屏幕空间：由输入的 `screenWindow` 决定的屏幕 $xy$ 坐标范围包围盒空间，一般指的是 NDC 空间
 - 光栅（Raster）空间：由像素的实际索引坐标组成的包围盒空间
 
 ```cpp
@@ -92,7 +92,7 @@ class ProjectiveCamera : public Camera {
 
 ## 6.2.2 透视投影相机
 
-透视投影相机的视锥是一个锥体，它由一个表示视口左右端向量夹角的浮点数 FOV 和远近平面的距离组成（见本章图一）。由于对于任意位置的不同平面，其相似比率均和其 $z$ 值正比。为了将视锥空间映射到 NDC 空间中，不同轴向的比例和对应的矩阵为：
+透视投影相机的视锥是一个锥体，它由一个表示视口左右端向量夹角的浮点数 fov (field of view) 和远近平面的距离组成（见本章图一）。由于对于任意位置的不同平面，其相似比率均和其 $z$ 值正比。为了将视锥空间映射到 NDC 空间中，不同轴向的比例和对应的矩阵为：
 
 $$\begin{matrix}
   x' = & x / z\\
@@ -158,4 +158,4 @@ Float EnvironmentCamera::GenerateRay(const CameraSample &sample,
 
 <center><img src="https://pbr-book.org/3ed-2018/Camera_Models/wide22-cross-section.svg" style="max-height: 30vh; margin: 10px"/></center>
 
-这部分描述了真实世界中由多个镜片组构成的真实相机系统，容我以后再看。W
+这部分描述了真实世界中由多个镜片组构成的真实相机系统，容我以后再看。
