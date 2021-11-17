@@ -1,5 +1,5 @@
 ---
-title: PBRT 第六章笔记 | Notes for PBRT Chapter 06 - Camera Models (basis)
+title: PBRT 第六章笔记（基础篇） | Notes for PBRT Chapter 06 - Camera Models (basis)
 date: 2021-11-04 22:21:01
 categories: 
 - programming
