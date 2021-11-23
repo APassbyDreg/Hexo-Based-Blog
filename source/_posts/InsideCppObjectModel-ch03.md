@@ -102,7 +102,7 @@ Sample s;
 1. 增加 vtbl 用于存储对应类型的虚函数入口
 2. 在 class object 中增加 vptr 指向 vtbl 
 3. 在执行期需要通过跳转才能访问函数入口
-4. 修改对应的 constructor 和 deconstructor 设定和删除 vptr 的值
+4. 修改对应的 constructor 和 destructor 设定和删除 vptr 的值
 
 在引入了 vptr 后，一个重要的问题是应该把它放在什么位置：
 

@@ -1,5 +1,5 @@
 ---
-title: PBRT 第七章笔记（基础篇） | Notes for PBRT Chapter 05 - 07 - Sampling and Reconstruction (basis)
+title: PBRT 第七章笔记（基础篇） | Notes for PBRT Chapter 07 - Sampling and Reconstruction (basis)
 date: 2021-11-15 21:53:39
 categories: 
 - programming

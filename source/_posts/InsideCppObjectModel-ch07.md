@@ -11,10 +11,6 @@ tags:
 toc: true
 ---
 
-# Ch07 站在对象模型的尖端
-
-Date: November 16, 2021 → November 17, 2021
-
 本章中讨论了三个著名的 C++ 语言扩充性质：template、exception handling (EH) 和 runtime type identification (RTTI)
 
 # 7.1 Template
@@ -172,7 +168,7 @@ void example()
 
 EH 的引入需要程序记录更多的执行期语句，如上述函数片段中的两次函数调用的位置具有了不同的执行期语义：后者在退出前需要调用 object 的析构函数。这种信息的记录通常使用一个储存了需要析构的对象的链表实现。
 
-EH 带来的另一问题是，如果 exception 在某些关键操作（如共享内存的上锁与解锁）之间发生，可能会造成资源的错误配置。这种时候一个最明确的方式就是对资源申请后直到释放前的使用额外的 try catch 保护。或者也可以将资源的申请和释放包裹在 class 的 constructor 和 deconstructor 中，这样就可以让程序在退出函数时自动释放已经申请的资源了。
+EH 带来的另一问题是，如果 exception 在某些关键操作（如共享内存的上锁与解锁）之间发生，可能会造成资源的错误配置。这种时候一个最明确的方式就是对资源申请后直到释放前的使用额外的 try catch 保护。或者也可以将资源的申请和释放包裹在 class 的 constructor 和 destructor 中，这样就可以让程序在退出函数时自动释放已经申请的资源了。
 
 ## Exception Handling 的支持
 

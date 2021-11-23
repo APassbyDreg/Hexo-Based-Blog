@@ -41,7 +41,7 @@ void* vec_new (
 		size_t elem_size,
 		int elem_cont,
 		void (*constructor)(void*),
-		void (*deconstructor)(void*, char)
+		void (*destructor)(void*, char)
 );
 ```
 
@@ -52,7 +52,7 @@ void* vec_delete (
 		void *array,
 		size_t elem_size,
 		int elem_cont,
-		void (*deconstructor)(void*, char)
+		void (*destructor)(void*, char)
 );
 ```
 
