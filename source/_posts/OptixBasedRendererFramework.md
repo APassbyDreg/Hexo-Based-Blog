@@ -7,13 +7,14 @@ categories:
 tags: 
 - CG
 - render
+toc: true
 ---
-
-
 
 ## 简介
 
 本项目是一个基于 Optix 7.3 的 GPU 光线追踪渲染框架，在保障了一定的可拓展性的同时，利用 NVIDIA 光线追踪技术提高了渲染的效率。
+
+> 新版本已发布，详见[新版本介绍页面](/2021/12/OptixBasedRendererFramework-v0-2/)
 
 ## 渲染样例
 
