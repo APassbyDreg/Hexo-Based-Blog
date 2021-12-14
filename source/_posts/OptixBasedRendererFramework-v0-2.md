@@ -24,11 +24,12 @@ toc: true
 
 ### 架构更新
 
-1. 修复了部分内存管理问题
+1. 修复了部分内存和显存的管理问题
 2. 使用智能指针代替裸指针
 3. 更改了 `derived instances` 储存的位置，现在由各个类管理它们各自的 `instances` 和 `derived classes`
-4. 增加了 instancing 机制，您现在可以复用同一模型，描述文件的语法也因此发生了改变
-5. 配合 instancing 机制更改了渲染流程，现在 `Hit Program` 由单独的 `Integrator` 类管理，原来的 `Mesh` 则抽象出从一个 `HitData` 生成 `SurfaceData` 的接口，转移到 `Direct Callable` 中
+4. 使用 `Spectrum` 类替代 `float4` 储存 radiance ，在之后可以使用更广的光谱渲染结果
+5. 增加了 instancing 机制，您现在可以复用同一模型，描述文件的语法也因此发生了改变
+6. 配合 instancing 机制更改了渲染流程，现在 `Hit Program` 由单独的 `Integrator` 类管理，原来的 `Mesh` 则抽象出从一个 `HitData` 生成 `SurfaceData` 的接口，转移到 `Direct Callable` 中
 
 ### 内容更新
 
