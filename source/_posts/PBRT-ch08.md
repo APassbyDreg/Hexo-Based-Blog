@@ -110,7 +110,7 @@ PBRT 中计算菲涅尔反射系数的函数是 `Float FrDielectric(Float cosThe
 
 导体的折射系数分为实部和虚部两个部分，其中的虚部 $k$ 一般称为吸收系数，因为部分入射光的能量会在导体中被吸收并最终转换为热能。下图展示了金的折射系数随波长变化的曲线（实线表示虚部、虚线表示实部）：
 
-<center><img src="https://pbr-book.org/3ed-2018/Reflection_Models/au-k-eta.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Reflection_Models/au-k-eta.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 由于一般不考虑导体的折射情况，因此只需要考虑电介质与导体的交界处的反射情况，因此只需要输入一个虚部。导体的菲涅尔反射系数的计算方法如下：
 
@@ -266,7 +266,7 @@ Trowbridge–Reitz 模型的函数分布如下：
 
 $$D\left(\omega_{\mathrm{h}}\right)=\frac{1}{\pi \alpha_{x} \alpha_{y} \cos ^{4} \theta_{\mathrm{h}}\left(1+\tan ^{2} \theta_{\mathrm{h}}\left(\cos ^{2} \phi_{\mathrm{h}} / \alpha_{x}^{2}+\sin ^{2} \phi_{\mathrm{h}} / \alpha_{y}^{2}\right)\right)^{2}}$$
 
-<center><img src="https://pbr-book.org/3ed-2018/Reflection_Models/beckmann-vs-tr-tails.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Reflection_Models/beckmann-vs-tr-tails.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 这种模型具有更加平滑的尾部（又称长尾效应），且可以提供一种快速地从范围在 $[0,1]$ 的粗糙度参数转换为各向异性参数 $\alpha$ 的方法 `TrowbridgeReitzDistribution::RoughnessToAlpha(Float roughness)` 。PBRT 中使用了四阶泰勒展开计算这一值。
 

@@ -164,7 +164,7 @@ PBRT 中的采样方法并没有考虑圆盘的 `innerRadius` 和 `pMax` ，为�
 
 为了实现这一点，首先会计算一个着色点上的局部坐标系，其中 $z$ 轴指向由着色点指向圆心的方向。接着根据相切的正交性可以判断采样的锥体内的 $\theta_{\max}$。
 
-<center><img src="https://pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/spherical-light-source-cone.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/spherical-light-source-cone.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 在得到了采样的锥体后，我们就可以在这上面做固体角上的均匀采样了。将均匀采样转换为球体表面坐标的方法如下三步：
 

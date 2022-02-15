@@ -286,11 +286,11 @@ $$r = \sqrt{\xi_1}\\
 
 虽然这一方法能够解决均匀采样的问题，但这种映射方法也使得在原分布下的方形被扭曲压缩得比较严重。
 
-<center><img src="https://pbr-book.org/3ed-2018/Monte_Carlo_Integration/uniform-disk-distortion.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Monte_Carlo_Integration/uniform-disk-distortion.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 另一种更佳的映射方式会同轴地从 $[-1,1]^2$ 映射到单位圆上，从而生成扭曲更少的结果：
 
-<center><img src="https://pbr-book.org/3ed-2018/Monte_Carlo_Integration/concentric-disk-mapping.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Monte_Carlo_Integration/concentric-disk-mapping.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 它将一个范围在 $[-1,1]^2$ 的方形经过压缩变形后映射到单位圆上，转换的方式如下：
 

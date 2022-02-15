@@ -291,7 +291,7 @@ PBRT 的 `MIPMap` 类型中实现了两种对材质的采样方式，分别是�
 
 ## 10.6.1 Perlin Noise
 
-<center><img src="https://pbr-book.org/3ed-2018/Texture/noise.png" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Texture/noise.png" style="max-height: 25vh; margin: 10px 0"/></center>
 
 
 Perlin noise 在任何整数点的位置上的值均为 0 ，并使用定义在各个整数点上的一个随机梯度决定噪声值。在 Perlin Nosie 上采样的步骤如下：

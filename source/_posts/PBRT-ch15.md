@@ -143,7 +143,7 @@ S(p_o,\omega_o,p_i,\omega_i) \approx (1 - F_r(\cos\theta_o))S_p(p_o,p_i)S_{\omeg
 
 另一方面，为了实现对空间项 $S_p$ 的采样，我们需要一种方法将二维的随机数映射到三维的场景几何体表面的点上。一种直观的想法是使用测地线进行采样，但这一方法并不具有普遍性，并需要对各个模型附加极大难度的不同的测量实现。为此，PBRT 使用了更简单的基于光线追踪的映射方法。
 
-<center><img src="https://pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Subsurface%20sample%20radius.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/Subsurface%20sample%20radius.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 上图展示了这一方法的基本概念：基于出点 SI 提供的 $p_o, N_o$ 可以构建一个球体的切面，我们会在这个以 $p_o$ 为球心，被以 $n_o$ 为法线的切面上采样一个角度 $\phi$ 和一个半径 $r$ ，接着在该位置沿着出点法线的逆方向发射一条光线与几何体求交，从而得到入点的 SI 信息。
 
@@ -164,7 +164,7 @@ virtual Float Pdf_Sr(int ch, Float r) const = 0;
 
 在一般情况下，BSSRDF 值会随着半径快速降低，我们对大多数距离较远的位置并不感兴趣，因此采样的范围被缩小到了距离圆心有限的范围 $r_{\max}$ 中。这一值是由使用固定的数值调用 `Sample_Sr(ch, 0.99)` 生成的，以保证其中包含了 $99.9%$ 的散射能量。
 
-<center><img src="https://pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/bssrdf-radius-to-length.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/bssrdf-radius-to-length.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 接着，PBRT 会在 $r_{\max}$ 的球范围内按照给定的投影轴和采样位置生成一段光线（如上图中长为 $l$ 的线段），这根光线会和场景进行多次求交，并在与本物体相交时将交点信息保存在一个相交位置的链表中，直到走完整个线段为止：
 
@@ -326,7 +326,7 @@ $$D_G = {2\sigma_a + \sigma_s' \over 3(\sigma_a + \sigma_s')^2}$$
 
 在低 albedo 的情况下，Grosjean 解（蓝线）相比上一节中的传统解（红线）更好地拟合了实际解（黑线）：
 
-<center><img src="https://pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/diffusion-classical.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Light_Transport_II_Volume_Rendering/diffusion-classical.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 在接下来的内容中，我们将关注于 Grosjean 解中的后一个多次散射项，而前一半的消光项会在之后进行分离简化处理。
 

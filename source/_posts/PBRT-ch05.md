@@ -103,7 +103,7 @@ $$\Phi = \lim_{\Delta t \to 0} {\Delta Q \over \Delta t} = {\mathrm{d} Q \over \
 
 单位面积上单位时间接收或释放的光能，单位是 $W/m^2$ ，定义为：
 
-<center><img src="https://pbr-book.org/3ed-2018/Color_and_Radiometry/Lamberts%20Law.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Color_and_Radiometry/Lamberts%20Law.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 需要注意的是，这里的面积指的是垂直于光照方向的面积，当光线并非垂直于表面入射时接收到光线的面积时，由于实际受光范围变大，计算 irradiance 时需要乘以一个 $\cos(\theta)$ 项，其中 $\theta$ 代表了入射方向于法线的夹角。
 
@@ -119,7 +119,7 @@ radiance 描述了在单位立体角单位面积上单位时间内接收到的�
 
 $$L(p, \omega) = \lim_{\Delta \omega \to 0} {\Delta E_\omega(p) \over \Delta \omega} = {\mathrm{d} E_\omega(p) \over \mathrm{d}\omega} = {\mathrm{d}\Phi \over \mathrm{d}\omega\mathrm{d}A^{\perp}}$$
 
-<center><img src="https://pbr-book.org/3ed-2018/Color_and_Radiometry/Radiance.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Color_and_Radiometry/Radiance.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 radiance 是全书中最常用的物理量，因为它在一条光线的传输过程中是一个不变的量，不会随着距离等因素变化。
 

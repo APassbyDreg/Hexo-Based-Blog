@@ -40,7 +40,7 @@ $$\tilde{f} = (III_T(x)f(x)) \circledast r(x) = T\sum_{i=-\infty}^{+\infty}f(iT)
 
 <center><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/func-to-sample.svg" style="max-height: 20vh; margin: 10px"/><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/shah-samples.svg" style="max-height: 20vh; margin: 10px"/><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/shah-sampled-function.svg" style="max-height: 20vh; margin: 10px"/></center>
 
-<center><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/func-tri-reconstruction.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/func-tri-reconstruction.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 在理想状态下，如果原始图像函数 $f$ 是有可数的多个频率构成的，如一系列有最小宽度的矩形函数。在这种情况下，可以利用傅里叶正反变换的性质得到对应的采样结果函数的。
 
@@ -246,7 +246,7 @@ class Filter {
 
 简单的阶梯函数，代表在截止半径内的所有样本权重都一样
 
-<center><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/box-recon-b.svg" style="max-height: 25vh; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="https://pbr-book.org/3ed-2018/Sampling_and_Reconstruction/box-recon-b.svg" style="max-height: 25vh; margin: 10px 0"/></center>
 
 ### Triangle Filter
 
