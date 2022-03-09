@@ -1,5 +1,5 @@
 ---
-title: PBRT 第十六章笔记 | Notes for PBRT Chapter 16 - Light Transport III > Bidirectional Methods ⚠️
+title: PBRT 第十六章笔记 | Notes for PBRT Chapter 16 - Light Transport III > Bidirectional Methods
 date: 2022-02-15 17:29:46
 categories: 
 - programming

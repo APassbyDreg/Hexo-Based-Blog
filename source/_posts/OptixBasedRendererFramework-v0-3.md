@@ -7,6 +7,7 @@ categories:
 tags: 
 - CG
 - render
+- OBR
 toc: true
 ---
 
@@ -28,3 +29,8 @@ toc: true
 </center>
 
 ## 更新日志
+
+- 增加了参与介质的渲染
+- 从利用类似虚拟机制实现的 `Mesh, Light, Material` 等类型抽象出 `VirtualProgramEntry` 用于管理对象
+- 重构了渲染管线，从递归式改为循环式
+- 框架结构调整
