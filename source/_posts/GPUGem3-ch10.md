@@ -1,5 +1,5 @@
 ---
-title: 《GPU Gem3》第十章笔记 - PSSM | Notes for GPU Gems 3 Chapter 10 - PSSM
+title: 《GPU Gem3》第十章笔记 - PSSM | Notes for GPU Gems 3 Chapter 10 - Parallel-Split Shadow Maps on Programmable GPUs
 date: 2022-03-09 21:25:47
 categories:
 - programming
