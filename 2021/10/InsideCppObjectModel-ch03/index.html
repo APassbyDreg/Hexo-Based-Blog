@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《深度探索C++对象模型》第三章笔记 | Notes for Inside Cpp Object Model Chapter 03 | Blog of Martin Z He</title>
+  <meta name="description" content="在这一章中，类的 data members 和 class hierarchy 是中心议题。一个类的 data members 可以表现这个类在运行中的某种状态，而 data members 的 static 与否则体现了这个状态是被单个实例使用还是所有的该类的实例所使用。  3.1 Data Members 的绑定 在 C++ 最早的编译器上，变量定义的位置会影响事实上获取的值。考虑如下代码：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《深度探索C++对象模型》第三章笔记 | Notes for Inside Cpp Object Model Chapter 03">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="在这一章中，类的 data members 和 class hierarchy 是中心议题。一个类的 data members 可以表现这个类在运行中的某种状态，而 data members 的 static 与否则体现了这个状态是被单个实例使用还是所有的该类的实例所使用。  3.1 Data Members 的绑定 在 C++ 最早的编译器上，变量定义的位置会影响事实上获取的值。考虑如下代码：">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/vptr-at-the-back.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/vptr-at-the-front.png">
+<meta property="og:image" content="https://pic4.zhimg.com/80/v2-886b7c232a54024aa2a211a3e4f2f0bf.jpg">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/multi-inheritance-example.png">
+<meta property="article:published_time" content="2021-10-26T09:27:21.000Z">
+<meta property="article:modified_time" content="2021-11-17T17:39:57.770Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="深度探索C++对象模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/vptr-at-the-back.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#31-data-members-%E7%9A%84%E7%BB%91%E5%AE%9A"><span class="toc-number">1.</span> <span class="toc-text"> 3.1 Data Members 的绑定</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#32-data-members-%E7%9A%84%E5%B8%83%E5%B1%80"><span class="toc-number">2.</span> <span class="toc-text"> 3.2 Data Members 的布局</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#33-data-member-%E7%9A%84%E5%AD%98%E5%8F%96"><span class="toc-number">3.</span> <span class="toc-text"> 3.3 Data Member 的存取</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#331-static-data-members"><span class="toc-number">3.1.</span> <span class="toc-text"> 3.3.1 Static Data Members</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#332-nonstatic-data-members"><span class="toc-number">3.2.</span> <span class="toc-text"> 3.3.2 Nonstatic Data Members</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#34-%E7%BB%A7%E6%89%BF%E4%B8%8E-data-members"><span class="toc-number">4.</span> <span class="toc-text"> 3.4 继承与 Data Members</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#341-%E5%8F%AA%E6%9C%89%E7%BB%A7%E6%89%BF%E6%B2%A1%E6%9C%89%E5%A4%9A%E6%80%81"><span class="toc-number">4.1.</span> <span class="toc-text"> 3.4.1 只有继承，没有多态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#342-%E5%90%AB%E6%9C%89%E5%A4%9A%E6%80%81%E7%9A%84%E7%BB%A7%E6%89%BF"><span class="toc-number">4.2.</span> <span class="toc-text"> 3.4.2 含有多态的继承</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#343-%E5%A4%9A%E7%BB%A7%E6%89%BF"><span class="toc-number">4.3.</span> <span class="toc-text"> 3.4.3 多继承</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#344-%E8%99%9A%E6%8B%9F%E7%BB%A7%E6%89%BF"><span class="toc-number">4.4.</span> <span class="toc-text"> 3.4.4 虚拟继承</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#35-%E5%AF%B9%E8%B1%A1%E6%88%90%E5%91%98%E7%9A%84%E6%95%88%E7%8E%87"><span class="toc-number">5.</span> <span class="toc-text"> 3.5 对象成员的效率</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#36-%E6%8C%87%E5%90%91-data-members-%E7%9A%84%E6%8C%87%E9%92%88"><span class="toc-number">6.</span> <span class="toc-text"> 3.6 指向 Data Members 的指针</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-InsideCppObjectModel-ch03" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《深度探索C++对象模型》第三章笔记 | Notes for Inside Cpp Object Model Chapter 03
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-10-26T09:27:21.000Z" itemprop="datePublished">2021-10-26</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/C/" rel="tag">C++</a>, <a class="article-tag-link-link" href="../../../tags/OOP/" rel="tag">OOP</a>, <a class="article-tag-link-link" href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" rel="tag">深度探索C++对象模型</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 2.8k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 10 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>在这一章中，类的 data members 和 class hierarchy 是中心议题。一个类的 data members 可以表现这个类在运行中的某种状态，而 data members 的 static 与否则体现了这个状态是被单个实例使用还是所有的该类的实例所使用。</p>
+<h1 id="31-data-members-的绑定"><a class="markdownIt-Anchor" href="#31-data-members-的绑定"></a> 3.1 Data Members 的绑定</h1>
+<p>在 C++ 最早的编译器上，变量定义的位置会影响事实上获取的值。考虑如下代码：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="keyword">int</span> v;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Sample</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// 注意：在早期 C++ 编译器中，这个函数会返回外部的 v</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">f</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> v; &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">int</span> v;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">// 近代 C++ 编译器会在这个位置分析函数实体，最后返回类内的 v</span></span><br></pre></td></tr></table></figure>
+<p>虽然这个情况在 C++ 2.0 后消失了（现代 C++ 编译器会按照语义返回类对象的变量值），这个古老的语言规则称为 member rewriting rule ，内容大意是：一个函数实体在整个 class 的声明结束前不会被分析。</p>
+<p>然而，对于 member function 中的参数列表却并非如此，参数列表中的内容在可分析的情况下是就地 resolve 的，例如下面的代码：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">float</span> l;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Sample</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">		<span class="comment">// 注意：这里的传入值是一个浮点数，而不是下面定义的 long long</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">test</span><span class="params">(l _a)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        a = _a;</span><br><span class="line">        cout &lt;&lt; _a &lt;&lt; endl; <span class="comment">// 因此这个位置会输出一个浮点值</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> l; <span class="comment">// 这里的 typedef 并不会被上文看到</span></span><br><span class="line">    l a; <span class="comment">// 这是一个 long long 类型的数据</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h1 id="32-data-members-的布局"><a class="markdownIt-Anchor" href="#32-data-members-的布局"></a> 3.2 Data Members 的布局</h1>
+<p>C++ Standard 要求：在同一个 access section（即 <code>public, private, protected</code> ）中，较晚出现的变量在内存中有较高的地址。然而，标准并不要求各个变量一定要连续排列，也没有要求在不同的 access section 之间的变量需要有明确的先后关系。</p>
+<p>大多数编译器选择把多个 access section 合并在一起，并按照声明的次序形成一个连续区块。access sections 的数量并不会引起额外负担。</p>
+<h1 id="33-data-member-的存取"><a class="markdownIt-Anchor" href="#33-data-member-的存取"></a> 3.3 Data Member 的存取</h1>
+<h2 id="331-static-data-members"><a class="markdownIt-Anchor" href="#331-static-data-members"></a> 3.3.1 Static Data Members</h2>
+<p>所有 static 变量被编译器提出于类外，被视为只在该类的生命范围内可见的全局变量。每个 static data member 只有一个实体，它被存放于程序的 data segment 中。每次程序操作该变量，编译器会将其转化为对该唯一的 extern 实体的直接操作。</p>
+<p>无论是从 class object 使用 member selection operator（即 <code>.</code> 运算符）、还是从一个复杂的派生类中取用、或者从函数的返回值取用，每一个这种变量的使用并不会导致任何时间或者空间上的额外负担。</p>
+<h2 id="332-nonstatic-data-members"><a class="markdownIt-Anchor" href="#332-nonstatic-data-members"></a> 3.3.2 Nonstatic Data Members</h2>
+<p>这些变量直接存放在每个 class object 中，必须通过 class object 才能对它们进行操作。编译器会将 class object 的起始地址加上该变量的偏移量操作。即：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Sample</span> &#123;</span>&#125;;</span><br><span class="line">Sample s;</span><br><span class="line">&amp;s.x == &amp;s + (&amp;Sample::_x - <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+<p>类变量的偏移量总被加上 1 ，这样能帮助编译系统区分出“一个指向  data member 的指针，用以指出 class 的第一个 member ” 和 “ 一个指向 data member 的指针，没有指出任何 member ” 这两种情况（这在 3.3.6 中有进一步讨论）。</p>
+<p>对于确认变量类型的 class object 的 data member 操作，在任意情况下均不会产生任何额外开销，因为对确定类型而言所有的 offset 均可在编译器确定。</p>
+<p>在使用指针或者引用实现多态的情况，对于来自 struct member 、单一  class member 、单继承、多继承的 data members，这些偏移量也可以在编译期间获知。而对于使用了 virtual base class 虚拟继承而来的变量，确认 offset 的过程必须延迟到执行期才能解决。</p>
+<h1 id="34-继承与-data-members"><a class="markdownIt-Anchor" href="#34-继承与-data-members"></a> 3.4 继承与 Data Members</h1>
+<p>在 C++ 继承模型中，一个派生类对象所表现出来的东西是其自己加上其基类的总和。但 derived class members 和 base class members 的排列次序并无规定。在大部分编译器上，基类的变量总是先出现，但一旦碰上 virtual base class 就说不准了。</p>
+<p>本节讨论了不同情况下的 data members 的排列情况</p>
+<h2 id="341-只有继承没有多态"><a class="markdownIt-Anchor" href="#341-只有继承没有多态"></a> 3.4.1 只有继承，没有多态</h2>
+<p>这种不含多态的情况称为具体继承（ concrete inheritance ，与虚继承相对）。一般而言，这种情况并不会增加额外开销。然而，需要注意的是这种写法可能带来一些问题：</p>
+<ol>
+<li>容易重复设计出一些作用相同的函数</li>
+<li>由于要求继承下来的类的完整性，可能累加不必要的 padding 从而带来额外的空间开销</li>
+</ol>
+<h2 id="342-含有多态的继承"><a class="markdownIt-Anchor" href="#342-含有多态的继承"></a> 3.4.2 含有多态的继承</h2>
+<p>一旦引入多态，势必要增加额外开销，包括了：</p>
+<ol>
+<li>增加 vtbl 用于存储对应类型的虚函数入口</li>
+<li>在 class object 中增加 vptr 指向 vtbl</li>
+<li>在执行期需要通过跳转才能访问函数入口</li>
+<li>修改对应的 constructor 和 destructor 设定和删除 vptr 的值</li>
+</ol>
+<p>在引入了 vptr 后，一个重要的问题是应该把它放在什么位置：</p>
+<p>早期的编译器中，它被放置于 class object 的尾端。这样可以保留 base class 的 C struct 布局，从而允许对象在 C 代码中继续使用。而随着虚继承和抽象基类的引入、加上 OO 编程方式的兴起，一些编译器开始将 vptr 置于 class object 的头部。这对于在多继承下通过指向 class members 的指针调用 virtual function 带来帮助（比如可以合并第一个基类和派生类的 vptr ，让它们指向一个同样的虚函数表，只不过不同指针的访问范围不同）。这两种布局的示意图如下：</p>
+<ul>
+<li>vptr 在尾部：继承了一个含有虚函数的类</li>
+</ul>
+<center><img src="vptr-at-the-back.png" style="max-height: 30vh; margin: 10px 0;"/></center>
+<ul>
+<li>vptr 在头部：继承自一个不含虚函数的类，但类中包含虚函数</li>
+</ul>
+<center><img src="vptr-at-the-front.png" style="max-height: 30vh; margin: 10px 0;"/></center>
+<p>特别地，以 g++ 在 c++11 标准下的编译结果为例，内存布局可能是这样的：</p>
+<center><img src="https://pic4.zhimg.com/80/v2-886b7c232a54024aa2a211a3e4f2f0bf.jpg" style="max-height: 30vh; margin: 10px 0;"/></center>
+<h2 id="343-多继承"><a class="markdownIt-Anchor" href="#343-多继承"></a> 3.4.3 多继承</h2>
+<p>在将虚指针置于尾部时，单继承的派生类和基类的起始地址一样·，这是一种「自然」的继承情况（其实在将指针置于头部时对于大多数编译器也满足这一情况）。</p>
+<p>多继承的复杂度在于派生类和其上一个的基类，乃至上上个基类之间都很有可能出现不自然的情况。编译器需要介入设定在类型转换时需要使用的地址偏移。</p>
+<p>一般而言，基类在派生类中的排布是连续且遵循声明顺序的。对于一个多重派生对象，其第一个基类的 subobject 的指针仍然等价于派生类本身的指针，而后续的基类的指针则需要加上前面的类型 subobjects 的大小。</p>
+<p>一种多重继承的示意图如下：</p>
+<center><img src="multi-inheritance-example.png" style="max-height: 40vh; margin: 10px 0;"/></center>
+<h2 id="344-虚拟继承"><a class="markdownIt-Anchor" href="#344-虚拟继承"></a> 3.4.4 虚拟继承</h2>
+<p>多重继承在语义上的副作用在于它必须支持某种形式的 shared subobject 继承，一个典型的例子是最早的 iostream 库：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ios</span> &#123;</span> ... &#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">istream</span> :</span> <span class="keyword">public</span> <span class="keyword">virtual</span> ios &#123; ... &#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ostream</span> :</span> <span class="keyword">public</span> <span class="keyword">virtual</span> ios &#123; ... &#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">iostream</span> :</span> <span class="keyword">public</span> istream, <span class="keyword">public</span> ostream &#123; ... &#125;;</span><br></pre></td></tr></table></figure>
+<p>一般的实现方法是：当一个类内如果含有一个或者多个 virtual base class objects，它将被分割为两个部分：不变部分与共享部分。不变部分的数据总是具有固定的 offset 可以直接操作，而共享部分则通过由各个编译器实现的方式间接操作。</p>
+<p>最基础的实现方法是在每个派生类中插入一些指向 virtual base class object 的指针，但这种方法有两个缺点：</p>
+<ol>
+<li>每个对象因为虚拟继承带来的额外开销不是固定的</li>
+<li>虚拟继承链的加长会导致间接存储层次的增加，而不是固定的额外开销</li>
+</ol>
+<p>对于第二个问题，大部分编译器都通过在编译器取得所有的 nested virtual base class 指针放到派生类中，从而解决固定存储时间的问题。如将  <code>a.(subobj_b).(subobj_c).var</code>  转化为 <code>a.(subobj_b_c).var</code>  。</p>
+<p>对于第一个问题有两种解决方案：</p>
+<ol>
+<li>MSVC 编译器引入了类似 vtbl 的所谓 virtual base class pointer table 的概念</li>
+<li>在 vtbl 中存放 virtual base class offset 。如在 Sun 编译器中，vtbl 可以被正值或者负值索引，其中负值的位置存放 virtual base class offset</li>
+</ol>
+<p>因为虚拟继承会产生额外的开销，所以对于它而言最有效的运用方式是使用一个抽象的 virtual base class，而其中没有任何 data member</p>
+<h1 id="35-对象成员的效率"><a class="markdownIt-Anchor" href="#35-对象成员的效率"></a> 3.5 对象成员的效率</h1>
+<p>在没有继承关系的情况下，如果打开优化（这是为了避免出现因为编译器的策略原因出现的扰动），所有对象成员的使用效率是完全一致的。这在可以直接确定数据地址的单一继承下，情况也是一样的。</p>
+<p>然而，一旦引入虚拟继承，测试中所有的编译器都歇菜了。哪怕访问的成员是一个可以在编译期间就能确定地址的非多态对象，虽然不开优化的情况下效率变化并不大，但打开优化之后的效率仍然有显著的降低。这可能说明了间接性会严重影响「将运算移向寄存器或缓存执行」的优化能力。</p>
+<h1 id="36-指向-data-members-的指针"><a class="markdownIt-Anchor" href="#36-指向-data-members-的指针"></a> 3.6 指向 Data Members 的指针</h1>
+<p>使用语法 <code>&amp;Class::data_member_name</code> 可以获取该成员变量在类内的指针（偏移量）。并使用 <code>class_object_ptr-&gt;(*data_member_ptr)</code>  应用这个指针。</p>
+<p>这种偏移量的做法会遇到无法区分 <code>NULL</code> 指针和指向偏移量为 0 的 data member 的指针的问题。这要求所有真正的 member offset 的值均被加一，而在使用这个值时需要注意减一后使用。然而，在部分编译器（如 MSVC ）中这个过程被优化了。这意味着如果你打印这些值，你得到的是原始的偏移量而非加一后的结果。</p>
+<p>另外一个需要注意的点是这种指针本身也支持多态。指向基类 data member 的指针可以与指向派生类 data member 互相转换，但这因为继承机制的介入需要加入 subobject 的偏移量而变得相当复杂并产生运行时的额外开销。</p>
+<p>使用这种指针的效率表现和在不同情况下使用对象成员的效率是一致的。在虚拟继承以外的场景，打开优化后并不会有明显的效率变化，而一旦引入虚拟继承，虽然不优化的情况下间接层数对效率只有小幅度的影响，却对优化的情况下有重大的影响。原因和直接使用对象成员的情况下是一样的。</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/" title="《深度探索C++对象模型》第三章笔记 | Notes for Inside Cpp Object Model Chapter 03" target="_blank" rel="external">https://blog.apassbydreg.work/2021/10/InsideCppObjectModel-ch03/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../UnityLightningFX/" title="Unity 里的闪电特效 | Lightning FX in Unity"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../PBRT-ch03/" title="PBRT 第三章笔记（基础篇） | Notes for PBRT Chapter 03 - Shapes (basis)"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

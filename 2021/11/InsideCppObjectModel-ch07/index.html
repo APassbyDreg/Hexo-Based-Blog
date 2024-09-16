@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《深度探索C++对象模型》第七章笔记 | Notes for Inside Cpp Object Model Chapter 07 | Blog of Martin Z He</title>
+  <meta name="description" content="本章中讨论了三个著名的 C++ 语言扩充性质：template、exception handling (EH) 和 runtime type identification (RTTI)  7.1 Template C++ 程序设计的风格自 cfront 3.0 中引入 template 开始就发生了深远的变化，这一功能本来是对 container classes 的一项支持，但它如今已经成为了通用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《深度探索C++对象模型》第七章笔记 | Notes for Inside Cpp Object Model Chapter 07">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch07/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="本章中讨论了三个著名的 C++ 语言扩充性质：template、exception handling (EH) 和 runtime type identification (RTTI)  7.1 Template C++ 程序设计的风格自 cfront 3.0 中引入 template 开始就发生了深远的变化，这一功能本来是对 container classes 的一项支持，但它如今已经成为了通用">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-11-17T09:03:18.000Z">
+<meta property="article:modified_time" content="2021-11-17T17:39:57.770Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="深度探索C++对象模型">
+<meta name="twitter:card" content="summary">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch07/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#71-template"><span class="toc-number">1.</span> <span class="toc-text"> 7.1 Template</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#template-%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96"><span class="toc-number">1.1.</span> <span class="toc-text"> Template 的实例化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#template-%E7%9A%84%E9%94%99%E8%AF%AF%E4%BF%A1%E6%81%AF"><span class="toc-number">1.2.</span> <span class="toc-text"> Template 的错误信息</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#template-%E4%B8%AD%E7%9A%84%E5%90%8D%E7%A7%B0%E5%86%B3%E8%AE%AEname-resolution"><span class="toc-number">1.3.</span> <span class="toc-text"> Template 中的名称决议（Name Resolution）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#member-functions-%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96"><span class="toc-number">1.4.</span> <span class="toc-text"> Member Functions 的实例化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#72-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86error-handling"><span class="toc-number">2.</span> <span class="toc-text"> 7.2 异常处理（Error Handling）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#exception-handling-%E7%9A%84%E7%BB%93%E6%9E%84"><span class="toc-number">2.1.</span> <span class="toc-text"> Exception Handling 的结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exception-handling-%E7%9A%84%E6%94%AF%E6%8C%81"><span class="toc-number">2.2.</span> <span class="toc-text"> Exception Handling 的支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exception-handling-%E7%9A%84%E4%BB%A3%E4%BB%B7"><span class="toc-number">2.3.</span> <span class="toc-text"> Exception Handling 的代价</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E6%96%87%E4%BB%B6%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="toc-number">2.3.1.</span> <span class="toc-text"> 程序文件大小的差异</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%BF%90%E8%A1%8C%E6%97%B6%E9%97%B4%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="toc-number">2.3.2.</span> <span class="toc-text"> 程序运行时间的差异</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#73-%E6%89%A7%E8%A1%8C%E6%9C%9F%E7%B1%BB%E5%9E%8B%E8%AF%86%E5%88%ABrtti"><span class="toc-number">3.</span> <span class="toc-text"> 7.3 执行期类型识别（RTTI）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%9E%8B%E5%AE%89%E5%85%A8%E7%9A%84-downcast"><span class="toc-number">3.1.</span> <span class="toc-text"> 类型安全的 downcast</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%9E%8B%E5%AE%89%E5%85%A8%E7%9A%84-dynamic-cast"><span class="toc-number">3.2.</span> <span class="toc-text"> 类型安全的 dynamic cast</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#reference-%E5%92%8C-pointer-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">3.3.</span> <span class="toc-text"> Reference 和 Pointer 的区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#typeid-%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-number">3.4.</span> <span class="toc-text"> typeid 运算符</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#74-%E6%95%88%E7%8E%87%E5%92%8C%E5%BC%B9%E6%80%A7"><span class="toc-number">4.</span> <span class="toc-text"> 7.4 效率和弹性</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E5%87%BD%E6%95%B0%E5%BA%93dynamic-shared-libraries"><span class="toc-number">4.1.</span> <span class="toc-text"> 动态函数库（Dynamic Shared Libraries）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98shared-memory"><span class="toc-number">4.2.</span> <span class="toc-text"> 共享内存（Shared Memory）</span></a></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-InsideCppObjectModel-ch07" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《深度探索C++对象模型》第七章笔记 | Notes for Inside Cpp Object Model Chapter 07
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-11-17T09:03:18.000Z" itemprop="datePublished">2021-11-17</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/C/" rel="tag">C++</a>, <a class="article-tag-link-link" href="../../../tags/OOP/" rel="tag">OOP</a>, <a class="article-tag-link-link" href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" rel="tag">深度探索C++对象模型</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 3.6k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 13 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>本章中讨论了三个著名的 C++ 语言扩充性质：template、exception handling (EH) 和 runtime type identification (RTTI)</p>
+<h1 id="71-template"><a class="markdownIt-Anchor" href="#71-template"></a> 7.1 Template</h1>
+<p>C++ 程序设计的风格自 cfront 3.0 中引入 template 开始就发生了深远的变化，这一功能本来是对 container classes 的一项支持，但它如今已经成为了通用程序设计的基础、用于属性混合、互斥机制等多处的参数化技术中。</p>
+<h2 id="template-的实例化"><a class="markdownIt-Anchor" href="#template-的实例化"></a> Template 的实例化</h2>
+<p>在 C++ 中，任何一个 class object 的定义（不包括指针），无论是编译器内部使用的临时对象还是用户定义的对象都会导致 template class 的实例化。然而，template class 中的内容必须要与一个实例化的类型绑定，如下例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">T</span>&gt;</span></span><br><span class="line">Class Sample</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">		<span class="class"><span class="keyword">enum</span> <span class="title">Status</span> &#123;</span>stat1, stat2&#125;</span><br><span class="line">		<span class="keyword">static</span> <span class="keyword">int</span> val;</span><br><span class="line">		<span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">(T bar)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>虽然该类中的 <code>Status</code> 枚举类和静态变量并不需要与任何类型参数绑定，但它仍然需要通过某个类型的实体才能访问，这将不得不产生多余的实体，即：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Sample::Status e; <span class="comment">// 错误的访问方法</span></span><br><span class="line">Sample&lt;<span class="keyword">int</span>&gt;::Status x; <span class="comment">// 必须这样使用</span></span><br><span class="line">Sample&lt;<span class="keyword">float</span>&gt;::Status y; <span class="comment">// 和上一行不同的实体</span></span><br></pre></td></tr></table></figure>
+<p>实例化的另一个特性是：只实例化需要使用的成员函数（虽然当前的编译器并不都遵循这项要求）。</p>
+<p>对于不同的类型标识符，模板在实例化时可能会出现不同的结果。对于基础操作符，如一些系统中即使 int 和 long 是等价的，但 <code>Sample&lt;int&gt;::val</code> 和 <code>Sample&lt;long&gt;::val</code> 产生的是两个不同的实体。但如 <code>size_t</code> 和 <code>unsigned long long</code> 这种使用 <code>typedef</code> 或者宏定义别名的类型却只会产生一种实体。但这只是一种行业默认的做法，并未在 C++ 标准中有明确的强制规定。</p>
+<h2 id="template-的错误信息"><a class="markdownIt-Anchor" href="#template-的错误信息"></a> Template 的错误信息</h2>
+<p>考虑一个具有很多错得离谱的类型声明：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Sample</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>$</span><br><span class="line">    <span class="built_in">Sample</span>(T t = <span class="number">1024</span>) : <span class="keyword">_t</span>(t)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (tt != t) <span class="keyword">throw</span> ex ex;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    T tt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里面隐藏了许多需要在模板类实例化后才能检测出的问题，包括了：</p>
+<ul>
+<li>L5 中是否可以使用 1024 赋值给一个 T 类型的对象</li>
+<li>L7 中 T 类型是否定义了 <code>operator!=</code></li>
+</ul>
+<p>这些问题在 nontemplate class 的声明中可以很轻易地在编译期就被找到。但对于 template class ，他们必须在每个实例化发生之后才能被检测出来。如 <code>Sample&lt;int&gt;</code> 中上两行的写法是合法的，而在 <code>Sample&lt;int *&gt;</code> 中则是非法的。</p>
+<p>在处理 template 的声明时，只有语汇（lexing）错误和解析（parsing）错误会被找到，而类型检查需要在每一个实例化发生时才会发生。对于上一节例中的函数声明，即使下面这个写法错得离谱，只要没有被实例化（对于函数而言，直到函数被使用时才被实例化），那么它在各个编译器的编译过程中均不会报错。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">T</span>&gt;</span> <span class="keyword">void</span> T1&lt;T&gt;::<span class="built_in">foo</span>(T bar)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">this</span>-&gt;xxx = <span class="number">0</span>; <span class="comment">// xxx 不是上述类中的 data member</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="template-中的名称决议name-resolution"><a class="markdownIt-Anchor" href="#template-中的名称决议name-resolution"></a> Template 中的名称决议（Name Resolution）</h2>
+<p>在模板中的函数类型确认同样也被推迟到了实例化发生的地点。编译器会从实例化发生时的语境中选择最适合模板类中的函数的具名函数链接到对于语句上，而并非只考虑在 template 定义时的语境。</p>
+<blockquote>
+<p>这一部分里面的内容和我的试验结果有差异，在 clang 和 msvc 上与书中结果相同，但在 gcc 上不同。测试中使用的代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* main.cpp */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;common.h&quot;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">(<span class="keyword">float</span> v)</span> </span>&#123; cout &lt;&lt; <span class="string">&quot;float foo&quot;</span> &lt;&lt; endl; &#125;</span><br><span class="line">Sample&lt;<span class="keyword">float</span>&gt; obj;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    obj.<span class="built_in">intCall</span>();</span><br><span class="line">    obj.<span class="built_in">typeCall</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* common.h */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> once</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">(<span class="keyword">int</span> v)</span> </span>&#123; cout &lt;&lt; <span class="string">&quot;int foo&quot;</span> &lt;&lt; endl; &#125;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">T</span>&gt;</span> <span class="class"><span class="keyword">class</span> <span class="title">Sample</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">intCall</span><span class="params">()</span> </span>&#123; <span class="built_in">foo</span>(v1); &#125;</span><br><span class="line">    <span class="function">T <span class="title">typeCall</span><span class="params">()</span> </span>&#123; <span class="built_in">foo</span>(v2); &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">int</span> v1;</span><br><span class="line">    T v2;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>上述代码在 clang 和 msvc 会分别调用 int foo 和 float foo，而在 gcc 上却只调用 int foo</p>
+</blockquote>
+<h2 id="member-functions-的实例化"><a class="markdownIt-Anchor" href="#member-functions-的实例化"></a> Member Functions 的实例化</h2>
+<p>为了实现对模板函数的支持，编译器的设计者需要考虑以下三个主要问题：</p>
+<ol>
+<li>
+<p>编译器如何找出函数的定义？</p>
+<p>其中一种解决方法是要求一个文件命名规则，如在 Example.h 中声明的模板函数的函数体必须在对应的 Example.c 或 Example.cpp 中定义。</p>
+</li>
+<li>
+<p>编译器如何只实例化程序中用到的函数？</p>
+<p>目前的实现方法主要是两种，一是无视这一需求实例化所有可能用到的函数，另一种是在编译期间进行仿真链接操作以找到可能用到的函数。</p>
+</li>
+<li>
+<p>编译器如何阻止同一个 member function 在多个 .o 文件中被实例化？</p>
+<p>这一问题的解决方法和上一个类似，要么忽略它转而在链接过程中完成去重的过程，要么在编译期间利用仿真链接操作去重。</p>
+</li>
+</ol>
+<p>上述这些问题与相应的解决方案都会造成编译时间的大量增加。为了解决这一问题，Edison Design Group 开发了一套第二代的 directed-instantiation 机制，其主要过程为：</p>
+<ol>
+<li>在编译期间不会产生任何 template 实体，只将相关信息储存在 object files 中</li>
+<li>在连接前使用 prelinker 检查 object files 以寻找 template 实体的相互参考和定义</li>
+<li>对于每个有 template 实体参考但是找不到定义的情况，将必要的程序实例化操作指定给对应的文件，并注册在 .ii 文件中</li>
+<li>prelinker 重新执行编译器以重新编译每一个 .ii 文件发生了变化的文件</li>
+<li>重复上述过程知道所有必要的实例化操作完成，最后执行链接器产生可执行文件</li>
+</ol>
+<p>但这也并不能完美地解决问题，在实现层面上，这似乎是 template 实例化所带来的对自动化和效率的一大瓶颈。当程序十分复杂且巨大的话，在个别的位置手动完成预先实例化的操作仍然是唯一的有效率的方法。</p>
+<h1 id="72-异常处理error-handling"><a class="markdownIt-Anchor" href="#72-异常处理error-handling"></a> 7.2 异常处理（Error Handling）</h1>
+<p>为了支持 EH ，编译器的主要工作就是找到 catch 语句以处理被抛出的 exception 。这需要跟踪程序堆栈中每个函数的作用域、并提供查询 exception object 类型的方法。最后，编译器还需要某种机制以管理被抛出的 exception object 。</p>
+<h2 id="exception-handling-的结构"><a class="markdownIt-Anchor" href="#exception-handling-的结构"></a> Exception Handling 的结构</h2>
+<p>C++ 中的 exception handling 主要有三个语汇组件构成：</p>
+<ol>
+<li>一个 try 区段以包裹一系列语句，这些语句可能会抛出异常</li>
+<li>一个 throw 子句，它在程序中的某个位置发出 exception</li>
+<li>至少一个 catch 子句以处理不同类型的 exception</li>
+</ol>
+<p>当一个 exception 被抛出时，在找到对应的 catch 子句前，堆栈中的每个函数调用都会被 pop 出去，并在离开前调用所有 local objects 的析构函数。如果没有找到符合的 catch 语句，默认的 terminate() 处理方法就会被调用结束程序。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">example</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">foo</span>();</span><br><span class="line">    SomeClass object = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">bar</span>();</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>EH 的引入需要程序记录更多的执行期语句，如上述函数片段中的两次函数调用的位置具有了不同的执行期语义：后者在退出前需要调用 object 的析构函数。这种信息的记录通常使用一个储存了需要析构的对象的链表实现。</p>
+<p>EH 带来的另一问题是，如果 exception 在某些关键操作（如共享内存的上锁与解锁）之间发生，可能会造成资源的错误配置。这种时候一个最明确的方式就是对资源申请后直到释放前的使用额外的 try catch 保护。或者也可以将资源的申请和释放包裹在 class 的 constructor 和 destructor 中，这样就可以让程序在退出函数时自动释放已经申请的资源了。</p>
+<h2 id="exception-handling-的支持"><a class="markdownIt-Anchor" href="#exception-handling-的支持"></a> Exception Handling 的支持</h2>
+<p>当一个 exception 发生时，编译系统需要完成以下事情：</p>
+<ol>
+<li>检查发生 throw 的函数</li>
+<li>确定 throw 是否发生在 try 中，这通常可以通过比较当前的程序计数器（pc）和编译时得到的 try 区段表得到</li>
+<li>如果在 try 中，则需要将 exception type 和每个 catch 比对类型，如果比对吻合则将流程控制交给 catch 字句中</li>
+<li>如果不在 try 中或没有符合的 catch 语句，则：
+<ol>
+<li>析构所有的 active local objects</li>
+<li>从堆栈中将当前函数 unwind 出取</li>
+<li>进入堆栈中的下一个函数中，重复以上 2 - 4 步</li>
+</ol>
+</li>
+</ol>
+<p>当一个 exception 被抛出时，一个 exception object 会被产生并放置在对应的数据堆栈中。这个对象的地址和其类型描述器（或提供类型描述器的函数）会被传给 catch 字句。</p>
+<p>在 exeption handling 的 catch 部分中依旧支持虚拟机制。在以下的例子中的表现和将一个 object 传入与 catch 对应的函数非常类似：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span></span><br><span class="line">&#123; <span class="keyword">throw</span> <span class="built_in">Derived</span>(); &#125;</span><br><span class="line"><span class="built_in"><span class="keyword">catch</span></span> (Base e)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 这个区段中使用的 e 发生了裁切，丢失了派生类的内容</span></span><br><span class="line">    <span class="keyword">throw</span>; <span class="comment">// 在不指定 exception 抛出时，实际抛出的是原始的派生类型，之前的修改都会被抛弃</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 或者可以使用引用</span></span><br><span class="line"><span class="built_in"><span class="keyword">catch</span></span> (Base &amp;e)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 在这个区段中虚拟机制在起作用</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="exception-handling-的代价"><a class="markdownIt-Anchor" href="#exception-handling-的代价"></a> Exception Handling 的代价</h2>
+<h3 id="程序文件大小的差异"><a class="markdownIt-Anchor" href="#程序文件大小的差异"></a> 程序文件大小的差异</h3>
+<table>
+<thead>
+<tr>
+<th>编译器</th>
+<th>无EH</th>
+<th>有EH</th>
+<th>增加的百分比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Borland</td>
+<td>86822</td>
+<td>89510</td>
+<td>3%</td>
+</tr>
+<tr>
+<td>Microsoft</td>
+<td>60146</td>
+<td>67071</td>
+<td>13%</td>
+</tr>
+<tr>
+<td>Symantec</td>
+<td>69786</td>
+<td>74826</td>
+<td>8%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="程序运行时间的差异"><a class="markdownIt-Anchor" href="#程序运行时间的差异"></a> 程序运行时间的差异</h3>
+<table>
+<thead>
+<tr>
+<th>编译器</th>
+<th>无EH</th>
+<th>有EH</th>
+<th>增加的百分比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Borland</td>
+<td>78s</td>
+<td>83s</td>
+<td>6%</td>
+</tr>
+<tr>
+<td>Microsoft</td>
+<td>83s</td>
+<td>87s</td>
+<td>5%</td>
+</tr>
+<tr>
+<td>Symantec</td>
+<td>94s</td>
+<td>96s</td>
+<td>4%</td>
+</tr>
+</tbody>
+</table>
+<h1 id="73-执行期类型识别rtti"><a class="markdownIt-Anchor" href="#73-执行期类型识别rtti"></a> 7.3 执行期类型识别（RTTI）</h1>
+<p>由于真正的 exception 是在执行期被处理的，其 object 必须带有自己的类型信息。Runtime Type Identification (RTTI) 便是支持这一特性所获得的副产物。这一功能用于在程序中实现安全的 downcast 或 dynamic cast 。</p>
+<h2 id="类型安全的-downcast"><a class="markdownIt-Anchor" href="#类型安全的-downcast"></a> 类型安全的 downcast</h2>
+<p>只有在类型可以被适当转型的情况下才能执行 downcast 。一个类型安全的 downcast 必须在执行期查看指针或引用所指的对象的真正类型，这需要额外的空间储存类型信息和额外的时间决定执行期的类型。</p>
+<p>C++ 的 RTTI 机制提供一个安全的 downcast 操作，但这种机制只对使用了继承和动态绑定的类型有效。为了让编译器分辨这些类型，编译器通常使用的策略是经由声明一个或多个 virtual function 以区分 class 声明。更进一步的，通常会直接将类型对应的 RTTI object 的指针放入 vtbl 之中。</p>
+<h2 id="类型安全的-dynamic-cast"><a class="markdownIt-Anchor" href="#类型安全的-dynamic-cast"></a> 类型安全的 dynamic cast</h2>
+<p><code>dynamic_cast</code> 运算符可以在执行期决定真正的类型。如果这个 downcast 是安全的，运算符就会返回被转型后的指针，否则就返回空指针。这通常是利用上述在 vtbl 中插入的 type_info 类型描述器完成的。</p>
+<h2 id="reference-和-pointer-的区别"><a class="markdownIt-Anchor" href="#reference-和-pointer-的区别"></a> Reference 和 Pointer 的区别</h2>
+<p>当 <code>dynamic_cast</code> 应用与指针上时，它可以返回一个 0 值以表示这个转换是不安全的，但一个引用并不能指向一个空对象。因此，当 <code>dynamic_cast</code> 被施加于一个引用上时，会发生以下的事情：</p>
+<ul>
+<li>如果 downcast 是安全的，它会被正常地执行</li>
+<li>如果 downcast 是不安全的，那么它会抛出一个 bad_cast exception</li>
+</ul>
+<h2 id="typeid-运算符"><a class="markdownIt-Anchor" href="#typeid-运算符"></a> typeid 运算符</h2>
+<p>无论是静态地对实体或类型使用，还是在运行期动态地对指针或引用使用 <code>typeid</code> 运算符就可以得到对应类型的 <code>type_info</code> 的一个 const reference。</p>
+<p>对于每一个描述块，编译器需要提供的最小信息包括了比较函数与 class 的真实名称。C++ Standard 中定义的类型如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">type_info</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	  <span class="keyword">virtual</span> ~<span class="built_in">type_info</span>();</span><br><span class="line">	  <span class="keyword">constexpr</span> <span class="keyword">bool</span> <span class="keyword">operator</span>==(<span class="keyword">const</span> type_info&amp; rhs) <span class="keyword">const</span> <span class="keyword">noexcept</span>;</span><br><span class="line">	  <span class="function"><span class="keyword">bool</span> <span class="title">before</span><span class="params">(<span class="keyword">const</span> type_info&amp; rhs)</span> <span class="keyword">const</span> <span class="keyword">noexcept</span></span>;</span><br><span class="line">	  <span class="function"><span class="keyword">size_t</span> <span class="title">hash_code</span><span class="params">()</span> <span class="keyword">const</span> <span class="keyword">noexcept</span></span>;</span><br><span class="line">	  <span class="function"><span class="keyword">const</span> <span class="keyword">char</span>* <span class="title">name</span><span class="params">()</span> <span class="keyword">const</span> <span class="keyword">noexcept</span></span>;</span><br><span class="line">	</span><br><span class="line">	  <span class="built_in">type_info</span>(<span class="keyword">const</span> type_info&amp;) = <span class="keyword">delete</span>;                   <span class="comment">// cannot be copied</span></span><br><span class="line">	  type_info&amp; <span class="keyword">operator</span>=(<span class="keyword">const</span> type_info&amp;) = <span class="keyword">delete</span>;        <span class="comment">// cannot be copied</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>RTTI 不仅仅适用于用户定义的类型，它还适用于一些基础的类型。你同样可以通过 <code>typeid(int)</code> 取得 <code>int</code> 类型的描述块。</p>
+<h1 id="74-效率和弹性"><a class="markdownIt-Anchor" href="#74-效率和弹性"></a> 7.4 效率和弹性</h1>
+<p>传统的 C++ 对象模型提供了较为高效的执行期支持。这种效率加上与 C 的兼容性保证了 C++ 的广泛接受度。然而，在动态函数库（Dynamic Shared Libraries）、共享内存（Shared Memory）以及分布式对象（Distributed Object）方面，这个对象模型的弹性还是不够。</p>
+<h2 id="动态函数库dynamic-shared-libraries"><a class="markdownIt-Anchor" href="#动态函数库dynamic-shared-libraries"></a> 动态函数库（Dynamic Shared Libraries）</h2>
+<p>理想上，一个动态链接的 shared library 的调用应该是透明的，已经链入的动态库的版本改变不应该对旧有的应用程序产生影响。然而在 C++ 的对象布局中，如果新版库中的 class object 的布局有所改变，那么对应的 member 偏移量也会变化，最后导致整个应用程序需要重新编译。</p>
+<h2 id="共享内存shared-memory"><a class="markdownIt-Anchor" href="#共享内存shared-memory"></a> 共享内存（Shared Memory）</h2>
+<p>当一个共享库被加载时，它在内存中的位置由 runtime linker 决定，一般而言与执行中的进程无关。然而当它之中包含了一个需要支持在共享内存中的虚函数的 class object 时，对与其它的进程而言，除非这个动态函数库被放置于完全相同的内存位置上，要不然就会产生严重的虚函数调用问题。这是因为虚函数在 vtbl 中的位置以及被写死了。</p>
+<p>这一切问题的出现都主要是因为 C++ 对象模型对高效性和 C 兼容性的坚持带来的的包袱。但这也正是 C++ 广泛的适用性的来源。</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch07/" title="《深度探索C++对象模型》第七章笔记 | Notes for Inside Cpp Object Model Chapter 07" target="_blank" rel="external">https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch07/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../InsideCppObjectModel-Archive/" title="《深度探索C++对象模型》笔记合集 | Notes Collection for Inside Cpp Object Model"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../PBRT-ch07/" title="PBRT 第七章笔记（基础篇） | Notes for PBRT Chapter 07 - Sampling and Reconstruction (basis)"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

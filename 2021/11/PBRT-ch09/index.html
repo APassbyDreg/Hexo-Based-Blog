@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>PBRT 第九章笔记 | Notes for PBRT Chapter 09 - Materials | Blog of Martin Z He</title>
+  <meta name="description" content="9.1 BSDFs BSDF 类型统一了 BRDF 和 BTDF ，并提供了一个供其它系统使用的统一接口。为了生成一个这样的实例，你需要提供以下信息：  一个代表了几何体表面信息的 SurfaceInteraction si 一个代表了交界面位置反射率的差值的浮点数 eta  一个 BSDF 类型中会储存至多 8 个 BxDF 的指针（当然，你可以通过修改源码中的一个常量改变这一值）以表示不同的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PBRT 第九章笔记 | Notes for PBRT Chapter 09 - Materials">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/11/PBRT-ch09/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="9.1 BSDFs BSDF 类型统一了 BRDF 和 BTDF ，并提供了一个供其它系统使用的统一接口。为了生成一个这样的实例，你需要提供以下信息：  一个代表了几何体表面信息的 SurfaceInteraction si 一个代表了交界面位置反射率的差值的浮点数 eta  一个 BSDF 类型中会储存至多 8 个 BxDF 的指针（当然，你可以通过修改源码中的一个常量改变这一值）以表示不同的">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Materials/Shading%20normal%20errors.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Materials/Displacement%20function.svg">
+<meta property="article:published_time" content="2021-11-23T05:58:38.000Z">
+<meta property="article:modified_time" content="2021-11-23T06:03:24.456Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="PBRT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pbr-book.org/3ed-2018/Materials/Shading%20normal%20errors.svg">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/11/PBRT-ch09/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#91-bsdfs"><span class="toc-number">1.</span> <span class="toc-text"> 9.1 BSDFs</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#911-bsdf-%E7%9A%84%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text"> 9.1.1 BSDF 的内存管理</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#92-material-interface-and-implementations"><span class="toc-number">2.</span> <span class="toc-text"> 9.2 Material Interface and Implementations</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#921-matte-material"><span class="toc-number">2.1.</span> <span class="toc-text"> 9.2.1 Matte Material</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#922-plastic-material"><span class="toc-number">2.2.</span> <span class="toc-text"> 9.2.2 Plastic Material</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#923-mix-material"><span class="toc-number">2.3.</span> <span class="toc-text"> 9.2.3 Mix Material</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#924-fourier-material"><span class="toc-number">2.4.</span> <span class="toc-text"> 9.2.4 Fourier Material</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#925-%E5%85%B6%E5%AE%83%E6%9D%90%E8%B4%A8"><span class="toc-number">2.5.</span> <span class="toc-text"> 9.2.5 其它材质</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#93-bump-mapping"><span class="toc-number">3.</span> <span class="toc-text"> 9.3 Bump Mapping</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-PBRT-ch09" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PBRT 第九章笔记 | Notes for PBRT Chapter 09 - Materials
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-11-23T05:58:38.000Z" itemprop="datePublished">2021-11-23</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/PBRT/" rel="tag">PBRT</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 1.9k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 8 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="91-bsdfs"><a class="markdownIt-Anchor" href="#91-bsdfs"></a> 9.1 BSDFs</h1>
+<p><code>BSDF</code> 类型统一了 BRDF 和 BTDF ，并提供了一个供其它系统使用的统一接口。为了生成一个这样的实例，你需要提供以下信息：</p>
+<ul>
+<li>一个代表了几何体表面信息的 <code>SurfaceInteraction si</code></li>
+<li>一个代表了交界面位置反射率的差值的浮点数 <code>eta</code></li>
+</ul>
+<p>一个 BSDF 类型中会储存至多 8 个 BxDF 的指针（当然，你可以通过修改源码中的一个常量改变这一值）以表示不同的表面模型，在使用的时候，<code>BSDF::f</code> 函数会调用每一个 BxDF 对象，并返回它们的 <code>BxDF::f</code> 给出的值的和。由于 BxDF 在着色的时候使用的是局部坐标系，BSDF 中也需要提供一个在两个坐标系之间转换方法，即使用下面这个正交矩阵完成转换。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="bold">M</mi><mo>=</mo><mrow><mo fence="true">(</mo><mtable rowspacing="0.15999999999999992em" columnalign="center center center" columnspacing="1em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">s</mi><mi>x</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">s</mi><mi>y</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">s</mi><mi>z</mi></msub></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">t</mi><mi>x</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">t</mi><mi>y</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">t</mi><mi>z</mi></msub></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">n</mi><mi>x</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">n</mi><mi>y</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><msub><mi mathvariant="bold">n</mi><mi>z</mi></msub></mstyle></mtd></mtr></mtable><mo fence="true">)</mo></mrow><mo>=</mo><mrow><mo fence="true">(</mo><mtable rowspacing="0.15999999999999992em" columnalign="center" columnspacing="1em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi mathvariant="bold">s</mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi mathvariant="bold">t</mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi mathvariant="bold">n</mi></mstyle></mtd></mtr></mtable><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{M}=\left(\begin{array}{ccc}\mathbf{s}_{x} &amp; \mathbf{s}_{y} &amp; \mathbf{s}_{z} \\\mathbf{t}_{x} &amp; \mathbf{t}_{y} &amp; \mathbf{t}_{z} \\\mathbf{n}_{x} &amp; \mathbf{n}_{y} &amp; \mathbf{n}_{z}\end{array}\right)=\left(\begin{array}{c}\mathbf{s} \\\mathbf{t} \\\mathbf{n}\end{array}\right)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68611em;vertical-align:0em;"></span><span class="mord"><span class="mord mathbf">M</span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.60004em;vertical-align:-1.55002em;"></span><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎝</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎛</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05em;"><span style="top:-4.21em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">s</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.0099999999999993em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">t</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-1.8099999999999994em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">n</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.5500000000000007em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05em;"><span style="top:-4.21em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">s</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.03588em;">y</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.0099999999999993em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">t</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.03588em;">y</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span><span style="top:-1.8099999999999994em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">n</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.03588em;">y</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.5500000000000007em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05em;"><span style="top:-4.21em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">s</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.0099999999999993em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">t</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-1.8099999999999994em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord"><span class="mord mathbf">n</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.5500000000000007em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎠</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎞</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.60004em;vertical-align:-1.55002em;"></span><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎝</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎛</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05em;"><span style="top:-4.21em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathbf">s</span></span></span></span><span style="top:-3.0099999999999993em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathbf">t</span></span></span></span><span style="top:-1.8099999999999994em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathbf">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.5500000000000007em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎠</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎞</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>在很多情况下，渲染的时候会使用与几何法线 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>n</mi><mi>g</mi></msub></mrow><annotation encoding="application/x-tex">n_g</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.716668em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathdefault">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span> 不同的表面法线 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>n</mi><mi>s</mi></msub></mrow><annotation encoding="application/x-tex">n_s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 来提高渲染质量，这些法线的值可能来自 bump map 、三角形插值等情况，但这也带来了一定的物理不正确。光线会因为不同法线方向带来的几何不一致问题发生漏光等问题。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Materials/Shading%20normal%20errors.svg" style="max-height: 32vh; margin: 10px 0"/></center>
+<h2 id="911-bsdf-的内存管理"><a class="markdownIt-Anchor" href="#911-bsdf-的内存管理"></a> 9.1.1 BSDF 的内存管理</h2>
+<p>每当光线和场景中的几何体相交时，至少都会有一个 BSDF 对象被产生出来。而每个 BSDF 对象中又需要储存至少一个 BxDF 对象。如果每次都使用 new 和 delete 去动态地生成和管理这些对象的内存，整个系统会变得异常低效。PBRT 中会使用 <code>MemoryArena</code> 来管理这些小块的内存，其写法如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">BSDF *b = <span class="built_in">ARENA_ALLOC</span>(arena, BSDF);</span><br><span class="line">BxDF *lam = <span class="built_in">ARENA_ALLOC</span>(arena, LambertianReflection)(<span class="built_in">Spectrum</span>(<span class="number">0.5f</span>));</span><br></pre></td></tr></table></figure>
+<p><code>ARENA_ALLOC</code> 宏使用了 C++ 中的 placement new 特性以在自定义的内存位置上构建对象。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ARENA_ALLOC(arena, Type) new (arena.Alloc(sizeof(Type))) Type</span></span><br></pre></td></tr></table></figure>
+<p>为了避免在自定义的内存上删除由自定义方法申请的对象，BSDF 的析构函数被设置为 <code>private</code> ，这保证了任何对他的 delete 操作均会在编译期间报错。</p>
+<h1 id="92-material-interface-and-implementations"><a class="markdownIt-Anchor" href="#92-material-interface-and-implementations"></a> 9.2 Material Interface and Implementations</h1>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// TransportMode Declarations</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="keyword">class</span> <span class="title">TransportMode</span> &#123;</span> Radiance, Importance &#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Material Declarations</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Material</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Material Interface</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *si,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            MemoryArena &amp;arena,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">Material</span>();</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Bump</span><span class="params">(<span class="keyword">const</span> std::shared_ptr&lt;Texture&lt;Float&gt;&gt; &amp;d,</span></span></span><br><span class="line"><span class="params"><span class="function">                     SurfaceInteraction *si)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>抽象类 <code>Material</code> 定义了各种材质的接口，这里面最重要的接口函数是 <code>ComputeScatteringFunctions()</code> 。它负责了初始化 <code>SurfaceInteraction::bsdf/bssrdf</code> 成员以供评估光线的传播。其中部分参数的意义在于：</p>
+<ul>
+<li><code>TransportMode mode</code> ：体现了这一条光线的来源是光源还是摄像机（会在 16.1 节中详细讨论）</li>
+<li><code>bool allowMultipleLobes</code> ：在不同的 Integrator 中提供的值不同，将它设置为 <code>true</code> 允许了随机采样的方法得到更加优秀的结果，但会在不使用随机采样的积分器中引入噪声。</li>
+</ul>
+<p>计算散射函数的过程开始于 <code>SurfaceInteraction::ComputeScatteringFunctions</code> ，它会首先计算光线的微分，再调用 <code>GeometricPrimitive::ComputeScatteringFunctions()</code> 寻找几何体对应的材质，最后对相应的材质调用 <code>Material::ComputeScatteringFunctions()</code> 。</p>
+<h2 id="921-matte-material"><a class="markdownIt-Anchor" href="#921-matte-material"></a> 9.2.1 Matte Material</h2>
+<p>这是一种最简单的材质，描述了一种存粹的漫反射表面，它需要使用三个材质：</p>
+<ul>
+<li>表示颜色的 <code>Kd</code></li>
+<li>表示粗糙度的 <code>sigma</code> ：当粗糙度为零时材质会使用 Lambertian 表面模型，其他情况下则会使用 OrenNayar 表面模型</li>
+<li>提供表面细节的 <code>bumpMap</code> ，这是一个可选项</li>
+</ul>
+<p>它的 <code>ComputeScatteringFunctions</code> 方法将上述内容结合到一起：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">MatteMaterial::ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *si,</span></span></span><br><span class="line"><span class="params"><span class="function">                                               MemoryArena &amp;arena,</span></span></span><br><span class="line"><span class="params"><span class="function">                                               TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                               <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Perform bump mapping with _bumpMap_, if present</span></span><br><span class="line">    <span class="keyword">if</span> (bumpMap) <span class="built_in">Bump</span>(bumpMap, si);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Evaluate textures for _MatteMaterial_ material and allocate BRDF</span></span><br><span class="line">    si-&gt;bsdf = <span class="built_in">ARENA_ALLOC</span>(arena, BSDF)(*si);</span><br><span class="line">    Spectrum r = Kd-&gt;<span class="built_in">Evaluate</span>(*si).<span class="built_in">Clamp</span>();</span><br><span class="line">    Float sig = <span class="built_in">Clamp</span>(sigma-&gt;<span class="built_in">Evaluate</span>(*si), <span class="number">0</span>, <span class="number">90</span>);</span><br><span class="line">    <span class="keyword">if</span> (!r.<span class="built_in">IsBlack</span>()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (sig == <span class="number">0</span>)</span><br><span class="line">            si-&gt;bsdf-&gt;<span class="built_in">Add</span>(<span class="built_in">ARENA_ALLOC</span>(arena, LambertianReflection)(r));</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            si-&gt;bsdf-&gt;<span class="built_in">Add</span>(<span class="built_in">ARENA_ALLOC</span>(arena, OrenNayar)(r, sig));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="922-plastic-material"><a class="markdownIt-Anchor" href="#922-plastic-material"></a> 9.2.2 Plastic Material</h2>
+<p>塑料材质可以被描述为 diffuse 和 glossy 散射函数的一种组合。它利用 <code>Kd, Ks</code> 描述漫反射的颜色和高光的颜色，并使用 <code>roughness</code> 描述表面的粗糙度，它将影响高光的范围。</p>
+<p>在本材质中，漫反射项由 Lambertian 材质提供，高光项则由粗糙度定义的微表面材质提供。</p>
+<h2 id="923-mix-material"><a class="markdownIt-Anchor" href="#923-mix-material"></a> 9.2.3 Mix Material</h2>
+<p>这种模型可以使用给定的权重混合任意两种材质，它会首先复制一份 SurfaceInteraction ，接着在两个 SI 上使用两种材质生成原始的 BSDF ，最后使用权重在原始的 SI 上重新生成 ScaledBSDF。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">MixMaterial::ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *si,</span></span></span><br><span class="line"><span class="params"><span class="function">                                             MemoryArena &amp;arena,</span></span></span><br><span class="line"><span class="params"><span class="function">                                             TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                             <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Compute weights and original _BxDF_s for mix material</span></span><br><span class="line">    Spectrum s1 = scale-&gt;<span class="built_in">Evaluate</span>(*si).<span class="built_in">Clamp</span>();</span><br><span class="line">    Spectrum s2 = (<span class="built_in">Spectrum</span>(<span class="number">1.f</span>) - s1).<span class="built_in">Clamp</span>();</span><br><span class="line">    SurfaceInteraction si2 = *si;</span><br><span class="line">    m1-&gt;<span class="built_in">ComputeScatteringFunctions</span>(si, arena, mode, allowMultipleLobes);</span><br><span class="line">    m2-&gt;<span class="built_in">ComputeScatteringFunctions</span>(&amp;si2, arena, mode, allowMultipleLobes);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Initialize _si-&gt;bsdf_ with weighted mixture of _BxDF_s</span></span><br><span class="line">    <span class="keyword">int</span> n1 = si-&gt;bsdf-&gt;<span class="built_in">NumComponents</span>(), n2 = si2.bsdf-&gt;<span class="built_in">NumComponents</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n1; ++i)</span><br><span class="line">        si-&gt;bsdf-&gt;bxdfs[i] =</span><br><span class="line">            <span class="built_in">ARENA_ALLOC</span>(arena, ScaledBxDF)(si-&gt;bsdf-&gt;bxdfs[i], s1);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n2; ++i)</span><br><span class="line">        si-&gt;bsdf-&gt;<span class="built_in">Add</span>(<span class="built_in">ARENA_ALLOC</span>(arena, ScaledBxDF)(si2.bsdf-&gt;bxdfs[i], s2));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="924-fourier-material"><a class="markdownIt-Anchor" href="#924-fourier-material"></a> 9.2.4 Fourier Material</h2>
+<p>这种材质根据提供的数据源文件名生成 FourierBSDF 并应用在 SI 上。</p>
+<h2 id="925-其它材质"><a class="markdownIt-Anchor" href="#925-其它材质"></a> 9.2.5 其它材质</h2>
+<p>除此之外，PBRT中还实现了大量如金属材质、次表面材质、Disney BSDF 材质等内容，此处就不一一详述。</p>
+<h1 id="93-bump-mapping"><a class="markdownIt-Anchor" href="#93-bump-mapping"></a> 9.3 Bump Mapping</h1>
+<center><img src="https://pbr-book.org/3ed-2018/Materials/Displacement%20function.svg" style="max-height: 20vh; margin: 10px 0"/></center>
+<p>Bump Mapping 实际上在每一个位置上从对应材质上采样了一个浮点数 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">d(p)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">d</span><span class="mopen">(</span><span class="mord mathdefault">p</span><span class="mclose">)</span></span></span></span> ，并将该位置沿着法线方向向外扩张 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">d(p)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">d</span><span class="mopen">(</span><span class="mord mathdefault">p</span><span class="mclose">)</span></span></span></span> 单位，以此来计算用于着色的法线。这一技术可以以很低的成本增加场景中的细节，因此被广泛地应用于各种渲染流程中。</p>
+<p><code>Material::Bump()</code> 方法提供了一种通用的 bump mapping 计算方法，它输入一个 Bump 材质和一个 SurfaceInteraction 指针，利用 SI 中的信息采样材质，并将对应的表面信息写入用于着色的 <code>ShadingGeometry</code> 之中。它通过 SI 中的微分信息在着色点和 <code>du,dv</code> 位置采样三次 bump map，并将得到的表面信息写入 SI 。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Material::Bump</span><span class="params">(<span class="keyword">const</span> std::shared_ptr&lt;Texture&lt;Float&gt;&gt; &amp;d,</span></span></span><br><span class="line"><span class="params"><span class="function">                    SurfaceInteraction *si)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Compute offset positions and evaluate displacement texture</span></span><br><span class="line">    SurfaceInteraction siEval = *si;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Shift _siEval_ _du_ in the $u$ direction</span></span><br><span class="line">    Float du = <span class="number">.5</span>f * (std::<span class="built_in">abs</span>(si-&gt;dudx) + std::<span class="built_in">abs</span>(si-&gt;dudy));</span><br><span class="line">    <span class="comment">// The most common reason for du to be zero is for ray that start from</span></span><br><span class="line">    <span class="comment">// light sources, where no differentials are available. In this case,</span></span><br><span class="line">    <span class="comment">// we try to choose a small enough du so that we still get a decently</span></span><br><span class="line">    <span class="comment">// accurate bump value.</span></span><br><span class="line">    <span class="keyword">if</span> (du == <span class="number">0</span>) du = <span class="number">.0005</span>f;</span><br><span class="line">    siEval.p = si-&gt;p + du * si-&gt;shading.dpdu;</span><br><span class="line">    siEval.uv = si-&gt;uv + <span class="built_in">Vector2f</span>(du, <span class="number">0.f</span>);</span><br><span class="line">    siEval.n = <span class="built_in">Normalize</span>((Normal3f)<span class="built_in">Cross</span>(si-&gt;shading.dpdu, si-&gt;shading.dpdv) +</span><br><span class="line">                         du * si-&gt;dndu);</span><br><span class="line">    Float uDisplace = d-&gt;<span class="built_in">Evaluate</span>(siEval);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Shift _siEval_ _dv_ in the $v$ direction</span></span><br><span class="line">    Float dv = <span class="number">.5</span>f * (std::<span class="built_in">abs</span>(si-&gt;dvdx) + std::<span class="built_in">abs</span>(si-&gt;dvdy));</span><br><span class="line">    <span class="keyword">if</span> (dv == <span class="number">0</span>) dv = <span class="number">.0005</span>f;</span><br><span class="line">    siEval.p = si-&gt;p + dv * si-&gt;shading.dpdv;</span><br><span class="line">    siEval.uv = si-&gt;uv + <span class="built_in">Vector2f</span>(<span class="number">0.f</span>, dv);</span><br><span class="line">    siEval.n = <span class="built_in">Normalize</span>((Normal3f)<span class="built_in">Cross</span>(si-&gt;shading.dpdu, si-&gt;shading.dpdv) +</span><br><span class="line">                         dv * si-&gt;dndv);</span><br><span class="line">    Float vDisplace = d-&gt;<span class="built_in">Evaluate</span>(siEval);</span><br><span class="line">    Float displace = d-&gt;<span class="built_in">Evaluate</span>(*si);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Compute bump-mapped differential geometry</span></span><br><span class="line">    Vector3f dpdu = si-&gt;shading.dpdu +</span><br><span class="line">                    (uDisplace - displace) / du * <span class="built_in">Vector3f</span>(si-&gt;shading.n) +</span><br><span class="line">                    displace * <span class="built_in">Vector3f</span>(si-&gt;shading.dndu);</span><br><span class="line">    Vector3f dpdv = si-&gt;shading.dpdv +</span><br><span class="line">                    (vDisplace - displace) / dv * <span class="built_in">Vector3f</span>(si-&gt;shading.n) +</span><br><span class="line">                    displace * <span class="built_in">Vector3f</span>(si-&gt;shading.dndv);</span><br><span class="line">    si-&gt;<span class="built_in">SetShadingGeometry</span>(dpdu, dpdv, si-&gt;shading.dndu, si-&gt;shading.dndv,</span><br><span class="line">                           <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/11/PBRT-ch09/" title="PBRT 第九章笔记 | Notes for PBRT Chapter 09 - Materials" target="_blank" rel="external">https://blog.apassbydreg.work/2021/11/PBRT-ch09/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../PBRT-ch10/" title="PBRT 第十章笔记 | Notes for PBRT Chapter 10 - Textures"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../PBRT-ch08/" title="PBRT 第八章笔记 | Notes for PBRT Chapter 08 - Reflection Models"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

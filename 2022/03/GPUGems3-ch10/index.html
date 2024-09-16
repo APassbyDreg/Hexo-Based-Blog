@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《GPU Gem3》第十章笔记 - PSSM | Notes for GPU Gems 3 Chapter 10 - Parallel-Split Shadow Maps on Programmable GPUs | Blog of Martin Z He</title>
+  <meta name="description" content="在这一技术中，视椎体被按照深度被平行于视平面的平面分割为多个深度层，每个深度层都会独立生成各自的 shadow map 。这一技术主要是为了提升 shadow map 在 view space 的采样频率，并与深度带来的采样频率变化所匹配。 PSSM 中的两个核心问题是：  如何选择分割的位置 如何平衡多pass和渲染阴影带来的性能损失   算法描述 PSSM 算法主要分为四步：  使用切割平面将">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《GPU Gem3》第十章笔记 - PSSM | Notes for GPU Gems 3 Chapter 10 - Parallel-Split Shadow Maps on Programmable GPUs">
+<meta property="og:url" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="在这一技术中，视椎体被按照深度被平行于视平面的平面分割为多个深度层，每个深度层都会独立生成各自的 shadow map 。这一技术主要是为了提升 shadow map 在 view space 的采样频率，并与深度带来的采样频率变化所匹配。 PSSM 中的两个核心问题是：  如何选择分割的位置 如何平衡多pass和渲染阴影带来的性能损失   算法描述 PSSM 算法主要分为四步：  使用切割平面将">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled%201.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled%202.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled%203.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled%204.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled%205.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled%206.png">
+<meta property="article:published_time" content="2022-03-09T13:25:47.000Z">
+<meta property="article:modified_time" content="2022-04-06T11:45:02.290Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="GPU Gems 3">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/Untitled.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AE%97%E6%B3%95%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text"> 算法描述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%E5%88%86%E5%89%B2%E8%A7%86%E6%A4%8E%E4%BD%93"><span class="toc-number">1.1.</span> <span class="toc-text"> 第一步：分割视椎体</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#shadow-map-%E7%9A%84%E8%B5%B0%E6%A0%B7"><span class="toc-number">1.1.1.</span> <span class="toc-text"> Shadow Map 的走样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#practical-split-scheme"><span class="toc-number">1.1.2.</span> <span class="toc-text"> Practical Split Scheme</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%84%E5%A4%84%E7%90%86"><span class="toc-number">1.1.3.</span> <span class="toc-text"> 预处理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%E8%AE%A1%E7%AE%97%E5%85%89%E6%BA%90%E7%9A%84%E5%8F%98%E6%8D%A2%E7%9F%A9%E9%98%B5"><span class="toc-number">1.2.</span> <span class="toc-text"> 第二步：计算光源的变换矩阵</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8E%E5%9C%BA%E6%99%AF%E6%97%A0%E5%85%B3%E7%9A%84%E6%8A%95%E5%BD%B1"><span class="toc-number">1.2.1.</span> <span class="toc-text"> 与场景无关的投影</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8E%E5%9C%BA%E6%99%AF%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%95%E5%BD%B1"><span class="toc-number">1.2.2.</span> <span class="toc-text"> 与场景相关的投影</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89-%E5%9B%9B%E6%AD%A5%E7%94%9F%E6%88%90-pssm-%E5%B9%B6%E5%90%88%E6%88%90%E9%98%B4%E5%BD%B1"><span class="toc-number">1.3.</span> <span class="toc-text"> 第三、四步：生成 PSSM 并合成阴影</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8E%E7%A1%AC%E4%BB%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text"> 基于硬件的实现方法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E9%98%B6%E6%AE%B5"><span class="toc-number">2.1.</span> <span class="toc-text"> 准备阶段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90-shadow-map"><span class="toc-number">2.2.</span> <span class="toc-text"> 生成 Shadow Map</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-gs-%E7%9A%84-cloning-%E6%8A%80%E6%9C%AF"><span class="toc-number">2.2.1.</span> <span class="toc-text"> 使用 GS 的 Cloning 技术</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-instancing"><span class="toc-number">2.2.2.</span> <span class="toc-text"> 使用 Instancing</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%88%E6%88%90%E9%98%B4%E5%BD%B1"><span class="toc-number">2.3.</span> <span class="toc-text"> 合成阴影</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9B%B4%E5%A4%9A%E7%9A%84%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text"> 更多的优化</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-GPUGems3-ch10" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《GPU Gem3》第十章笔记 - PSSM | Notes for GPU Gems 3 Chapter 10 - Parallel-Split Shadow Maps on Programmable GPUs
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2022-03-09T13:25:47.000Z" itemprop="datePublished">2022-03-09</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/GPU-Gems-3/" rel="tag">GPU Gems 3</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 3.8k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 17 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>在这一技术中，视椎体被按照深度被平行于视平面的平面分割为多个深度层，每个深度层都会独立生成各自的 shadow map 。这一技术主要是为了提升 shadow map 在 view space 的采样频率，并与深度带来的采样频率变化所匹配。</p>
+<p>PSSM 中的两个核心问题是：</p>
+<ul>
+<li>如何选择分割的位置</li>
+<li>如何平衡多pass和渲染阴影带来的性能损失</li>
+</ul>
+<h1 id="算法描述"><a class="markdownIt-Anchor" href="#算法描述"></a> 算法描述</h1>
+<p>PSSM 算法主要分为四步：</p>
+<ol>
+<li>使用切割平面将视椎体分割为 m 份</li>
+<li>为这些部分计算光源的 VP 矩阵</li>
+<li>为这些部分以相同的分辨率 res 生成 PSSM</li>
+<li>将阴影应用到场景中</li>
+</ol>
+<h2 id="第一步分割视椎体"><a class="markdownIt-Anchor" href="#第一步分割视椎体"></a> 第一步：分割视椎体</h2>
+<p>虽然可以让用户自定义分割方式，但此处使用的是论文中使用的 practical split scheme 方法。</p>
+<h3 id="shadow-map-的走样"><a class="markdownIt-Anchor" href="#shadow-map-的走样"></a> Shadow Map 的走样</h3>
+<center style="margin-bottom: 10px"><img src="Untitled.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>SM 上的单位纹素 ds 投影到视平面上的面积为 dp ，可以定义走样的误差：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>e</mi><mi>r</mi><mi>r</mi><mi>o</mi><mi>r</mi><mo>=</mo><mfrac><mrow><mi mathvariant="normal">d</mi><mi>p</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi>s</mi></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mi>tan</mi><mo>⁡</mo><mi>ϕ</mi></mrow></mfrac><mo>⋅</mo><mfrac><mrow><mi mathvariant="normal">d</mi><mi>z</mi></mrow><mrow><mi>z</mi><mi mathvariant="normal">d</mi><mi>s</mi></mrow></mfrac><mo>⋅</mo><mfrac><mrow><mi>cos</mi><mo>⁡</mo><mi>ϕ</mi></mrow><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">error = {\mathrm{d}p \over \mathrm{d}s} = {1 \over \tan\phi}\cdot{\mathrm{d}z \over z\mathrm{d}s}\cdot{\cos\phi\over\cos\theta}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.0574399999999997em;vertical-align:-0.686em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714399999999998em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault">s</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault">p</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.20188em;vertical-align:-0.8804400000000001em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop">tan</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">ϕ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804400000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:2.05744em;vertical-align:-0.686em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.37144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault">s</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:2.0574399999999997em;vertical-align:-0.686em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714399999999998em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop">cos</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">θ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop">cos</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">ϕ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></span></p>
+<p>这一公式可以被分解为透视走样 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mi mathvariant="normal">d</mi><mi>z</mi></mrow><mrow><mi>z</mi><mi mathvariant="normal">d</mi><mi>s</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">{\mathrm{d}z \over z\mathrm{d}s}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2251079999999999em;vertical-align:-0.345em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8801079999999999em;"><span style="top:-2.6550000000000002em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span><span class="mord mtight"><span class="mord mathrm mtight">d</span></span><span class="mord mathdefault mtight">s</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">d</span></span><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 和投影走样 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>⁡</mo><mi>ϕ</mi></mrow><mrow><mi>tan</mi><mo>⁡</mo><mi>ϕ</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">{\cos\phi \over \tan\phi\cos\theta}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.4133239999999998em;vertical-align:-0.481108em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9322159999999999em;"><span style="top:-2.6550000000000002em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight">tan</span><span class="mspace mtight" style="margin-right:0.19516666666666668em;"></span><span class="mord mathdefault mtight">ϕ</span><span class="mspace mtight" style="margin-right:0.19516666666666668em;"></span><span class="mop mtight">cos</span><span class="mspace mtight" style="margin-right:0.19516666666666668em;"></span><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.446108em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight">cos</span><span class="mspace mtight" style="margin-right:0.19516666666666668em;"></span><span class="mord mathdefault mtight">ϕ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.481108em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 两部分，其中后半部分对于任意固定的场景和投影矩阵而言可以被视为一个常数。为了减少走样的程度，通常会选择前者入手。</p>
+<h3 id="practical-split-scheme"><a class="markdownIt-Anchor" href="#practical-split-scheme"></a> <strong><strong>Practical Split Scheme</strong></strong></h3>
+<p>在这一分割方法中，分隔位置定义为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>C</mi><mi>i</mi></msub><mo>=</mo><mi>λ</mi><msubsup><mi>C</mi><mi>i</mi><mi>log</mi><mo>⁡</mo></msubsup><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>λ</mi><mo stretchy="false">)</mo><msubsup><mi>C</mi><mi>i</mi><mrow><mi mathvariant="normal">u</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">i</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">C_i = \lambda C_i^{\log} + (1 - \lambda)C_i^{\mathrm{uni}}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.2438799999999999em;vertical-align:-0.276864em;"></span><span class="mord mathdefault">λ</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9670159999999998em;"><span style="top:-2.4231360000000004em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span><span style="top:-3.180908em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight">lo<span style="margin-right:0.01389em;">g</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.276864em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.130502em;vertical-align:-0.25em;"></span><span class="mord mathdefault">λ</span><span class="mclose">)</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8805019999999999em;"><span style="top:-2.4530000000000003em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">u</span><span class="mord mathrm mtight">n</span><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<p>其中的 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msup><mi>C</mi><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi></mrow></msup><mo separator="true">,</mo><msup><mi>C</mi><mrow><mi mathvariant="normal">u</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">i</mi></mrow></msup></mrow><annotation encoding="application/x-tex">C^{\mathrm{log}}, C^{\mathrm{uni}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.043548em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">l</span><span class="mord mathrm mtight">o</span><span class="mord mathrm mtight" style="margin-right:0.01389em;">g</span></span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.830502em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">u</span><span class="mord mathrm mtight">n</span><span class="mord mathrm mtight">i</span></span></span></span></span></span></span></span></span></span></span></span></span> 分别是基于对数和基于均匀分割方法的分割位置，这一方法使用了一个参数 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>λ</mi></mrow><annotation encoding="application/x-tex">\lambda</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">λ</span></span></span></span> 对这两种方法进行插值。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%201.png" style="max-height: 25vh; margin: 10px 0"/></center>
+<p>为了达到最优的透视走样分布，我们需要 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mi mathvariant="normal">d</mi><mi>z</mi></mrow><mrow><mi>z</mi><mi mathvariant="normal">d</mi><mi>s</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">{\mathrm{d}z \over z\mathrm{d}s}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2251079999999999em;vertical-align:-0.345em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8801079999999999em;"><span style="top:-2.6550000000000002em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span><span class="mord mtight"><span class="mord mathrm mtight">d</span></span><span class="mord mathdefault mtight">s</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">d</span></span><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 项在整个深度区域内尽量为一个常值，即 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mi>d</mi><mi>z</mi></mrow><mrow><mi>z</mi><mi>d</mi><mi>s</mi></mrow></mfrac><mo>=</mo><mi>ρ</mi></mrow><annotation encoding="application/x-tex">\frac{d z}{z d s}=\rho</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2251079999999999em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8801079999999999em;"><span style="top:-2.6550000000000002em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">s</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">ρ</span></span></span></span> 。此时 SM 的纹素长度 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi></mrow><annotation encoding="application/x-tex">s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">s</span></span></span></span> 到深度 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>z</mi></mrow><annotation encoding="application/x-tex">z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span> 的映射有：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mo stretchy="false">(</mo><mi>z</mi><mo stretchy="false">)</mo><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>s</mi></msubsup><mi>d</mi><mi>s</mi><mo>=</mo><mfrac><mn>1</mn><mi>ρ</mi></mfrac><msubsup><mo>∫</mo><mi>n</mi><mi>z</mi></msubsup><mfrac><mn>1</mn><mi>z</mi></mfrac><mi>d</mi><mi>z</mi><mo>=</mo><mfrac><mn>1</mn><mi>ρ</mi></mfrac><mi>ln</mi><mo>⁡</mo><mrow><mo fence="true">(</mo><mfrac><mi>z</mi><mi>n</mi></mfrac><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">s(z)=\int_{0}^{s} d s=\frac{1}{\rho} \int_{n}^{z} \frac{1}{z} d z=\frac{1}{\rho} \ln \left(\frac{z}{n}\right)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">s</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.326242em;vertical-align:-0.9119499999999999em;"></span><span class="mop"><span class="mop op-symbol large-op" style="margin-right:0.44445em;position:relative;top:-0.0011249999999999316em;">∫</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.414292em;"><span style="top:-1.7880500000000001em;margin-left:-0.44445em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">0</span></span></span></span><span style="top:-3.8129000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">s</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9119499999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.3262420000000006em;vertical-align:-0.9119499999999999em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">ρ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804400000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop"><span class="mop op-symbol large-op" style="margin-right:0.44445em;position:relative;top:-0.0011249999999999316em;">∫</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.4142920000000005em;"><span style="top:-1.7880500000000001em;margin-left:-0.44445em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">n</span></span></span></span><span style="top:-3.812900000000001em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9119499999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mord mathdefault">d</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.20188em;vertical-align:-0.8804400000000001em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">ρ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804400000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop">ln</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size2">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.10756em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">n</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size2">)</span></span></span></span></span></span></span></p>
+<p>由于 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mo stretchy="false">(</mo><mi>f</mi><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">s(f) = 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">s</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">1</span></span></span></span> ，易得 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>ρ</mi><mo>=</mo><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>f</mi><mi mathvariant="normal">/</mi><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\rho = \ln(f / n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">ρ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">ln</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord">/</span><span class="mord mathdefault">n</span><span class="mclose">)</span></span></span></span> 。我们会尽量让每个 SM 所对应的 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi></mrow><annotation encoding="application/x-tex">s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">s</span></span></span></span> 范围大小相同，因此对于一组 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">m</span></span></span></span> 个分割平面有：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>s</mi><mi>i</mi></msub><mo>=</mo><mi>s</mi><mrow><mo fence="true">(</mo><msubsup><mi>C</mi><mi>i</mi><mi>log</mi><mo>⁡</mo></msubsup><mo fence="true">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>f</mi><mi mathvariant="normal">/</mi><mi>n</mi><mo stretchy="false">)</mo></mrow></mfrac><mi>ln</mi><mo>⁡</mo><mrow><mo fence="true">(</mo><mfrac><msubsup><mi>C</mi><mi>i</mi><mi>log</mi><mo>⁡</mo></msubsup><mi>n</mi></mfrac><mo fence="true">)</mo></mrow><mo>=</mo><mfrac><mi>i</mi><mi>m</mi></mfrac><mspace linebreak="newline"></mspace><msubsup><mi>C</mi><mi>i</mi><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi></mrow></msubsup><mo>=</mo><mi>n</mi><msup><mrow><mo fence="true">(</mo><mfrac><mi>f</mi><mi>n</mi></mfrac><mo fence="true">)</mo></mrow><mrow><mi>i</mi><mi mathvariant="normal">/</mi><mi>m</mi></mrow></msup></mrow><annotation encoding="application/x-tex">s_{i}=s\left(C_{i}^{\log }\right)=\frac{1}{\ln (f / n)} \ln \left(\frac{C_{i}^{\log }}{n}\right) = {i \over m}\\
+C_i^{\mathrm{log}} = n\left({f \over n}\right)^{i / m}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.80002em;vertical-align:-0.65002em;"></span><span class="mord mathdefault">s</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size2">(</span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9670159999999998em;"><span style="top:-2.4231360000000004em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span style="top:-3.180908em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight">lo<span style="margin-right:0.01389em;">g</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.276864em;"><span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size2">)</span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.0000299999999998em;vertical-align:-1.25003em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop">ln</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mord">/</span><span class="mord mathdefault">n</span><span class="mclose">)</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop">ln</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size4">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.644016em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">n</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.6769999999999996em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9670159999999999em;"><span style="top:-2.4231360000000004em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span style="top:-3.1809080000000005em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight">lo<span style="margin-right:0.01389em;">g</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.276864em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size4">)</span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.02252em;vertical-align:-0.686em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3365200000000002em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">m</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span><span class="mspace newline"></span><span class="base"><span class="strut" style="height:1.2438799999999999em;vertical-align:-0.276864em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9670159999999998em;"><span style="top:-2.4231360000000004em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span><span style="top:-3.180908em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">l</span><span class="mord mathrm mtight">o</span><span class="mord mathrm mtight" style="margin-right:0.01389em;">g</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.276864em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.67793em;vertical-align:-0.95003em;"></span><span class="mord mathdefault">n</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714399999999998em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">n</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.10764em;">f</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.7279em;"><span style="top:-3.9029em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mtight">/</span><span class="mord mathdefault mtight">m</span></span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>虽然基于对数的分割方法可以提供理论上最优的分割结果，但是在实践中靠近近平面的分割平面会非常接近彼此，从而在近平面附近产生过采样。</p>
+<p>另一方面，均匀分割则直接按照深度均匀地放置分割平面：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msubsup><mi>C</mi><mi>i</mi><mrow><mi mathvariant="normal">u</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">i</mi></mrow></msubsup><mo>=</mo><mi>n</mi><mo>+</mo><mo stretchy="false">(</mo><mi>f</mi><mo>−</mo><mi>n</mi><mo stretchy="false">)</mo><mfrac><mi>i</mi><mi>m</mi></mfrac></mrow><annotation encoding="application/x-tex">C_i^{\mathrm{uni}} = n + (f - n) {i \over m}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.1275019999999998em;vertical-align:-0.247em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8805019999999999em;"><span style="top:-2.4530000000000003em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">u</span><span class="mord mathrm mtight">n</span><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.66666em;vertical-align:-0.08333em;"></span><span class="mord mathdefault">n</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:2.02252em;vertical-align:-0.686em;"></span><span class="mord mathdefault">n</span><span class="mclose">)</span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3365200000000002em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">m</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></span></p>
+<p>但这带来的走样实际上和同样分辨率下标准的 SM 并无差距。这一分割方法会在近平面附近造成欠采样，而在较远的部分造成过采样。</p>
+<p>由于这两种分割方法均无法给出有效的分割，实际的实现中会用一个参数 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>λ</mi></mrow><annotation encoding="application/x-tex">\lambda</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">λ</span></span></span></span> 对这两者进行插值以权衡各自的优劣。</p>
+<h3 id="预处理"><a class="markdownIt-Anchor" href="#预处理"></a> 预处理</h3>
+<p>在分割视椎体之前，应该动态地调整摄像机的视椎体至恰好包含所有可视物体的设置，从而可以避免在近平面或远平面浪费采样。</p>
+<h2 id="第二步计算光源的变换矩阵"><a class="markdownIt-Anchor" href="#第二步计算光源的变换矩阵"></a> 第二步：计算光源的变换矩阵</h2>
+<p>和常规的 SM 相似，PSSM 也需要计算光源的 VP 矩阵以生成 SM 。由于我们将视椎体分为了多个子区域，我们需要对每一个子区域计算 VP 矩阵。主要的计算方法有两种：</p>
+<ol>
+<li>
+<p>和场景无关的方法直接取完整包含分割块的部分作为 VP 矩阵</p>
+ <center style="margin-bottom: 10px"><img src="Untitled%202.png" style="max-height: 25vh; margin: 10px 0"/></center>
+</li>
+<li>
+<p>通过引入场景信息，可以只包含可能向视椎体中投影的所有物体即可</p>
+ <center style="margin-bottom: 10px"><img src="Untitled%203.png" style="max-height: 25vh; margin: 10px 0"/></center>
+</li>
+</ol>
+<h3 id="与场景无关的投影"><a class="markdownIt-Anchor" href="#与场景无关的投影"></a> 与场景无关的投影</h3>
+<p>为了得到对应的投影矩阵，我们需要计算分割的视椎体 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>V</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">V_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 在光源裁剪空间内的 AABB 。需要注意的是，裁剪空间的 z 值会被设为 0 从而保证任何光源和视椎体之间的物体可以正常投影。样例代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Build a matrix for cropping light&#x27;s projection    </span></span><br><span class="line"><span class="comment">// Given vectors are in light&#x27;s clip space </span></span><br><span class="line"><span class="function">Matrix <span class="title">Light::CalculateCropMatrix</span><span class="params">(Frustum splitFrustum)</span> </span>&#123;   </span><br><span class="line">		Matrix lightViewProjMatrix = viewMatrix * projMatrix;  </span><br><span class="line"> </span><br><span class="line">		<span class="comment">// Find boundaries in light&#x27;s clip space   </span></span><br><span class="line">		BoundingBox cropBB = <span class="built_in">CreateAABB</span>(splitFrustum.AABB, lightViewProjMatrix);   </span><br><span class="line"></span><br><span class="line">		<span class="comment">// Use default near-plane value   </span></span><br><span class="line">		cropBB.min.z = <span class="number">0.0f</span>;   </span><br><span class="line"></span><br><span class="line">		<span class="comment">// Create the crop matrix   </span></span><br><span class="line">		<span class="keyword">float</span> scaleX, scaleY, scaleZ;   </span><br><span class="line">		<span class="keyword">float</span> offsetX, offsetY, offsetZ;   </span><br><span class="line">		scaleX = <span class="number">2.0f</span> / (cropBB.max.x - cropBB.min.x);   </span><br><span class="line">		scaleY = <span class="number">2.0f</span> / (cropBB.max.y - cropBB.min.y);   </span><br><span class="line">		offsetX = <span class="number">-0.5f</span> * (cropBB.max.x + cropBB.min.x) * scaleX;   </span><br><span class="line">		offsetY = <span class="number">-0.5f</span> * (cropBB.max.y + cropBB.min.y) * scaleY;   </span><br><span class="line">		scaleZ = <span class="number">1.0f</span> / (cropBB.max.z - cropBB.min.z);   </span><br><span class="line">		offsetZ = -cropBB.min.z * scaleZ;   </span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> <span class="built_in">Matrix</span>( scaleX,     <span class="number">0.0f</span>,     <span class="number">0.0f</span>,  <span class="number">0.0f</span>,</span><br><span class="line">                     <span class="number">0.0f</span>,   scaleY,     <span class="number">0.0f</span>,  <span class="number">0.0f</span>,</span><br><span class="line">                     <span class="number">0.0f</span>,     <span class="number">0.0f</span>,   scaleZ,  <span class="number">0.0f</span>,</span><br><span class="line">                  offsetX,  offsetY,  offsetZ,  <span class="number">1.0f</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>得到了裁剪矩阵后，对应的 VP 矩阵可以简单地写为：<code>VP = lightViewMatrix * lightProjMatrix * cropMatrix</code></p>
+<p>除了在裁剪空间计算切割矩阵以外，其实还可以在其它的空间中计算这一矩阵。但由于裁剪空间中所有的光线方向都统一为沿 z 轴，使得这种实现具有良好的统一性和直观性。</p>
+<h3 id="与场景相关的投影"><a class="markdownIt-Anchor" href="#与场景相关的投影"></a> 与场景相关的投影</h3>
+<p>将场景的几何条件加入考量可以进一步减少样本的浪费。在这一实现中，近平面被移动至恰好包含 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>V</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">V_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 或任意投影物体的位置，远平面可以被移动至恰好包含所有被投影物体的位置。xy 边界也同样可以根据投影和被投影物体而调整。样例代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Matrix <span class="title">Light::CalculateCropMatrix</span><span class="params">(ObjectList casters,                                   </span></span></span><br><span class="line"><span class="params"><span class="function">																	ObjectList receivers,            </span></span></span><br><span class="line"><span class="params"><span class="function">					                        Frustum frustum)</span> </span>&#123;   </span><br><span class="line">		<span class="comment">// Bounding boxes   </span></span><br><span class="line">		BoundingBox receiverBB, casterBB, splitBB;   </span><br><span class="line">		Matrix lightViewProjMatrix = viewMatrix * projMatrix;   </span><br><span class="line"></span><br><span class="line">		<span class="comment">// Merge all bounding boxes of casters into a bigger &quot;casterBB&quot;.   </span></span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; casters.<span class="built_in">size</span>(); i++)&#123;     </span><br><span class="line">				BoundingBox bb = <span class="built_in">CreateAABB</span>(casters[i]-&gt;AABB, lightViewProjMatrix);</span><br><span class="line">				casterBB.<span class="built_in">Union</span>(bb);   </span><br><span class="line">		&#125;   </span><br><span class="line"></span><br><span class="line">		<span class="comment">// Merge all bounding boxes of receivers into a bigger &quot;receiverBB&quot;.   </span></span><br><span class="line">				<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; receivers.<span class="built_in">size</span>(); i++)&#123;       </span><br><span class="line">				bb = <span class="built_in">CreateAABB</span>(receivers[i]-&gt;AABB, lightViewProjMatrix);     </span><br><span class="line">				receiverBB.<span class="built_in">Union</span>(bb);   </span><br><span class="line">		&#125;   </span><br><span class="line"></span><br><span class="line">		<span class="comment">// Find the bounding box of the current split in the light&#x27;s clip space.   </span></span><br><span class="line">		splitBB = <span class="built_in">CreateAABB</span>(splitFrustum.AABB, lightViewProjMatrix); </span><br><span class="line">  </span><br><span class="line">		<span class="comment">// Scene-dependent bounding volume   </span></span><br><span class="line">		BoundingBox cropBB;   </span><br><span class="line">		cropBB.min.x = <span class="built_in">Max</span>(<span class="built_in">Max</span>(casterBB.min.x, receiverBB.min.x), splitBB.min.x);   </span><br><span class="line">		cropBB.max.x = <span class="built_in">Min</span>(<span class="built_in">Min</span>(casterBB.max.x, receiverBB.max.x), splitBB.max.x);   </span><br><span class="line">		cropBB.min.y = <span class="built_in">Max</span>(<span class="built_in">Max</span>(casterBB.min.y, receiverBB.min.y), splitBB.min.y);   </span><br><span class="line">		cropBB.max.y = <span class="built_in">Min</span>(<span class="built_in">Min</span>(casterBB.max.y, receiverBB.max.y), splitBB.max.y);   </span><br><span class="line">		cropBB.min.z = <span class="built_in">Min</span>(casterBB.min.z, splitBB.min.z);   </span><br><span class="line">		cropBB.max.z = <span class="built_in">Min</span>(receiverBB.max.z, splitBB.max.z);   </span><br><span class="line"></span><br><span class="line">		<span class="comment">// Create the crop matrix.   </span></span><br><span class="line">		<span class="keyword">float</span> scaleX, scaleY, scaleZ;   </span><br><span class="line">		<span class="keyword">float</span> offsetX, offsetY, offsetZ;   </span><br><span class="line">		scaleX = <span class="number">2.0f</span> / (cropBB.max.x - cropBB.min.x);   </span><br><span class="line">		scaleY = <span class="number">2.0f</span> / (cropBB.max.y - cropBB.min.y);   </span><br><span class="line">		offsetX = <span class="number">-0.5f</span> * (cropBB.max.x + cropBB.min.x) * scaleX;   </span><br><span class="line">		offsetY = <span class="number">-0.5f</span> * (cropBB.max.y + cropBB.min.y) * scaleY;   </span><br><span class="line">		scaleZ = <span class="number">1.0f</span> / (cropBB.max.z – cropBB.min.z);   </span><br><span class="line">		offsetZ = -cropBB.min.z * scaleZ;   </span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> <span class="built_in">Matrix</span>( scaleX,     <span class="number">0.0f</span>,     <span class="number">0.0f</span>,  <span class="number">0.0f</span>,</span><br><span class="line">                     <span class="number">0.0f</span>,   scaleY,     <span class="number">0.0f</span>,  <span class="number">0.0f</span>,</span><br><span class="line">                     <span class="number">0.0f</span>,     <span class="number">0.0f</span>,   scaleZ,  <span class="number">0.0f</span>,</span><br><span class="line">                  offsetX,  offsetY,  offsetZ,  <span class="number">1.0f</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="第三-四步生成-pssm-并合成阴影"><a class="markdownIt-Anchor" href="#第三-四步生成-pssm-并合成阴影"></a> 第三、四步：生成 PSSM 并合成阴影</h2>
+<p>根据硬件系统的不同，后两部分的实现可能各不相同。由于本算法使用了多个 SM ，在运行时需要更多的 pass 以生成它们。为了减小这一情况对渲染的压力，我们可以使用一种基于硬件的方法。主要的实现方法包括以下三种：</p>
+<ol>
+<li>多 pass 方法：这种方法是最通用的，但也由于没有利用硬件的加速从而效率较低</li>
+<li>利用 DX9 级别的硬件进行部分加速：这一方法可以去除生成阴影时需要的多 pass</li>
+<li>利用 DX10 级别的硬件进行完全加速：利用 geometry shader 的 cloning 和 instancing 进一步加速</li>
+</ol>
+<h1 id="基于硬件的实现方法"><a class="markdownIt-Anchor" href="#基于硬件的实现方法"></a> 基于硬件的实现方法</h1>
+<p>上述三种主要的实现方法的渲染流程如下图所示：</p>
+<center style="margin-bottom: 10px"><img src="Untitled%204.png" style="max-height: 50vh; margin: 10px 0"/></center>
+<p>第一个方法过于古老了不予讨论。</p>
+<p>第二个方法属于常规的实现思路。</p>
+<p>第三个方法通过引入 geometry shader 进一步加速 SM 的生成。GS 在 VS 后运行，对于每个几何体，输入其中的顶点并输出一系列新的几何体。DX10 同样支持了 Render Target Array ，这使得程序可以在 GS 输出的时候指定输出的目标 RT 。这些方法使得几何体可以被复制以用于多个 PSSM 中。</p>
+<h2 id="准备阶段"><a class="markdownIt-Anchor" href="#准备阶段"></a> 准备阶段</h2>
+<p>我们首先需要准备 m 个 SM 作为一个数组，每个 SM 均需要有对应的材质绑定。特别地，当 SM 访问超出边界时，需要设置一个常值作为边界颜色。创建的过程如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">D3D10_TEXTURE2D_DESC DescTex = &#123;&#125;; </span><br><span class="line">DescTex.Width = shadowMapSize; </span><br><span class="line">DescTex.Height = shadowMapSize; </span><br><span class="line">DescTex.ArraySize = numSplits; </span><br><span class="line">DescTex.Format = DXGI_FORMAT_R32_TYPELESS; </span><br><span class="line">DescTex.Usage = D3D10_USAGE_DEFAULT; </span><br><span class="line">DescTex.BindFlags = D3D10_BIND_DEPTH_STENCIL | D3D10_BIND_SHADER_RESOURCE; </span><br><span class="line">DescTex.MipLevels = <span class="number">1</span>; </span><br><span class="line">DescTex.SampleDesc.Count = <span class="number">1</span>; </span><br><span class="line">device-&gt;<span class="built_in">CreateTexture2D</span>(...)；</span><br></pre></td></tr></table></figure>
+<p>使用 DX10 中新引入的 Resource View 解释内容：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">D3D10_SHADER_RESOURCE_VIEW_DESC DescSRV = &#123;&#125;; </span><br><span class="line">DescSRV.Format = DXGI_FORMAT_R32_FLOAT; </span><br><span class="line">DescSRV.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2DARRAY; </span><br><span class="line">DescSRV.Texture2DArray.ArraySize = numSplits; </span><br><span class="line">DescSRV.Texture2DArray.MipLevels = <span class="number">1</span>; </span><br><span class="line">device-&gt;<span class="built_in">CreateShaderResourceView</span>(...)</span><br><span class="line"></span><br><span class="line">D3D10_DEPTH_STENCIL_VIEW_DESC DescDSV = &#123;&#125;; </span><br><span class="line">DescDSV.Format = DXGI_FORMAT_D32_FLOAT; </span><br><span class="line">DescDSV.ViewDimension = D3D10_DSV_DIMENSION_TEXTURE2DARRAY; </span><br><span class="line">DescDSV.Texture2DArray.ArraySize = numSplits; </span><br><span class="line">device-&gt;<span class="built_in">CreateDepthStencilView</span>(...);</span><br></pre></td></tr></table></figure>
+<p>就可以得到一组用于采样的 SM 了。我们不必创建 RT ，因为在此处我们唯一关心的只有深度值。下面的代码负责设置视口和 RT ：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">D3D10_VIEWPORT vp; </span><br><span class="line">vp.Width = shadowMapSize; </span><br><span class="line">vp.Height = shadowMapSize; </span><br><span class="line">vp.MinDepth = <span class="number">0</span>; </span><br><span class="line">vp.MaxDepth = <span class="number">1</span>; </span><br><span class="line">vp.TopLeftX = <span class="number">0</span>; </span><br><span class="line">vp.TopLeftY = <span class="number">0</span>; </span><br><span class="line">device-&gt;<span class="built_in">RSSetViewports</span>(<span class="number">1</span>, &amp;vp); </span><br><span class="line">device-&gt;<span class="built_in">OMSetRenderTargets</span>(<span class="number">0</span>, <span class="literal">NULL</span>, pDSV);</span><br></pre></td></tr></table></figure>
+<p>在找到了可能的投影物体之后，需要跟踪其 <code>firstSplit</code> 和 <code>lastSplit</code> 两个变量，这会用于确定该物体渲染的 SM 序列。我们同样需要保存裁剪矩阵的数组以在同一个 pass 中生成所有 SM 。</p>
+<h2 id="生成-shadow-map"><a class="markdownIt-Anchor" href="#生成-shadow-map"></a> 生成 Shadow Map</h2>
+<p>对于每一个投影物，需要遍历其占据的所有分割部分生成 SM 。下面给出了两种不同的方法以复制同一物体：</p>
+<h3 id="使用-gs-的-cloning-技术"><a class="markdownIt-Anchor" href="#使用-gs-的-cloning-技术"></a> 使用 GS 的 Cloning 技术</h3>
+<p>在这种方法中，可以使用 GS 将几何体的三角形提交到不同的 RT 中。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%205.png" style="max-height: 60vh; margin: 10px 0"/></center>
+<p>在这种方法下，VS 只需要负责将每个顶点转换到光源的裁剪空间内，这一步骤对于所有投影物都是一样的。接下来使用 GS 将三角形复制到具体的 RT 上并应用对应的裁剪变换。样例代码如下：</p>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Geometry shader output structure    </span></span><br><span class="line">struct GS_OUT &#123;   </span><br><span class="line">		float4 pos : SV_POSITION;  </span><br><span class="line">		<span class="type">uint</span> RTIndex : SV_RenderTargetArrayIndex; </span><br><span class="line">&#125;; </span><br><span class="line"><span class="comment">// Geometry shader </span></span><br><span class="line">[maxvertexcount(NUMSPLITS * <span class="number">3</span>)] </span><br><span class="line"><span class="type">void</span> GS_RenderShadowMap(triangle VS_OUT In[<span class="number">3</span>],                         </span><br><span class="line">												<span class="keyword">inout</span> TriangleStream&lt;GS_OUT&gt; triStream) &#123;   </span><br><span class="line">		<span class="comment">// For each split to render    </span></span><br><span class="line">		<span class="keyword">for</span>(<span class="type">int</span> split = firstSplit; split &lt;= lastSplit; split++)   &#123;     </span><br><span class="line">				GS_OUT Out;     <span class="comment">// Set render target index.     </span></span><br><span class="line">				Out.RTIndex = split;     <span class="comment">// For each vertex of triangle    </span></span><br><span class="line">				<span class="keyword">for</span>(<span class="type">int</span> vertex = <span class="number">0</span>; vertex &lt; <span class="number">3</span>; vertex++)     &#123;       </span><br><span class="line">						<span class="comment">// Transform vertex with split-specific crop matrix.       </span></span><br><span class="line">						Out.pos = mul(In[vertex].pos, cropMatrix[split]);       </span><br><span class="line">						<span class="comment">// Append vertex to stream       </span></span><br><span class="line">						triStream.Append(Out);     </span><br><span class="line">				&#125;     </span><br><span class="line">				<span class="comment">// Mark end of triangle     </span></span><br><span class="line">				triStream.RestartStrip();   </span><br><span class="line">		&#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="使用-instancing"><a class="markdownIt-Anchor" href="#使用-instancing"></a> 使用 Instancing</h3>
+<p>在支持 Instancing 的 DX10 中，VS 可以从 <code>SV_InstanceID</code> 获取当前的实例编号以应用不同的裁剪矩阵。在 CPU 侧只需要在 <code>DrawIndexedInstanced()</code> 设置实例数量即可。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%206.png" style="max-height: 60vh; margin: 10px 0"/></center>
+<p>其代码如下：</p>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">struct VS_IN &#123;   </span><br><span class="line">		float4 pos : POSITION;   </span><br><span class="line">		<span class="type">uint</span> instance : SV_InstanceID; </span><br><span class="line">&#125;; </span><br><span class="line">struct VS_OUT &#123;   </span><br><span class="line">		float4 pos : POSITION;   </span><br><span class="line">		<span class="type">uint</span> split : TEXTURE0; </span><br><span class="line">&#125;; </span><br><span class="line">VS_OUT VS_RenderShadowMap(VS_IN In) &#123;   </span><br><span class="line">		VS_OUT Out;   </span><br><span class="line">		<span class="comment">// Transform with world/view/projection.   </span></span><br><span class="line">		Out.pos = mul(In.pos, ...);   </span><br><span class="line">		<span class="comment">// Determine split index from instance ID.   </span></span><br><span class="line">		Out.split = firstSplit + In.instance;   </span><br><span class="line">		<span class="comment">// Transform with split-specific crop matrix.   </span></span><br><span class="line">		Out.pos = mul(Out.pos, cropMatrix[Out.split]);   </span><br><span class="line">		<span class="keyword">return</span> Out; </span><br><span class="line">&#125; </span><br><span class="line">[maxvertexcount(<span class="number">3</span>)]</span><br><span class="line"><span class="type">void</span> GS_RenderShadowMap(triangle VS_OUT In[<span class="number">3</span>],</span><br><span class="line">						             <span class="keyword">inout</span> TriangleStream&lt;GS_OUT&gt; triStream) &#123;   </span><br><span class="line">		GS_OUT Out;   <span class="comment">// Set render target index.   </span></span><br><span class="line">		Out.RTIndex = In[<span class="number">0</span>].split;   <span class="comment">// Pass triangle through.   </span></span><br><span class="line">		Out.pos = In[<span class="number">0</span>].pos;   </span><br><span class="line">		triStream.Append(Out);   </span><br><span class="line">		Out.pos = In[<span class="number">1</span>].pos;   </span><br><span class="line">		triStream.Append(Out);   </span><br><span class="line">		Out.pos = In[<span class="number">2</span>].pos;   </span><br><span class="line">		triStream.Append(Out);   </span><br><span class="line">		triStream.RestartStrip();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这一方法同样可以降低 API 开销，但其需要的计算次数其实是一样的。但这一方法可能可以因为不需要在 GS 中扩展大量数据而得到较高的效率。</p>
+<p>上述两种方法甚至可以被同时使用，每种方法都用于处理一部分投影物。</p>
+<h2 id="合成阴影"><a class="markdownIt-Anchor" href="#合成阴影"></a> 合成阴影</h2>
+<p>这里的阴影判定和 DX9 的几乎一样，主要的区别在于采样材质数组的操作不同。最简单的方法是直接使用 <code>SampleLevel()</code> 从数组中采样材质。其中传入的第三个维度代表了材质位置。</p>
+<p>虽然这种方法可以正常地得到需要的信息，但当需要做进一步的 PCF 处理时就不那么好用了，使用 HLSL4 提供的 <code>SampleCmpLevelZero()</code> 可以同时进行采样和比较。利用一个线性比较滤波器就可以得到 PCF 的结果。</p>
+<p>不幸的是，这一函数无法应用于材质列表上。它实际上是用于 Cube Map 上的。我们可以通过使用 6 个分割平面创建一个 Cube Map 以绕过这个限制。需要的配置修改如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// When creating the texture array </span></span><br><span class="line">DescTex.ArraySize = <span class="number">6</span>; </span><br><span class="line">DescTex.MiscFlags = D3D10_RESOURCE_MISC_TEXTURECUBE; </span><br><span class="line">. . . </span><br><span class="line"><span class="comment">// When creating the shader resource view </span></span><br><span class="line">DescSRV.ViewDimension = D3D10_SRV_DIMENSION_TEXTURECUBE; </span><br><span class="line">DescSRV.TextureCube.MipLevels = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>下面的代码将采样材质的坐标转换为 Cube Map 坐标：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">float3 cubeCoord; </span><br><span class="line"><span class="keyword">if</span>(split == <span class="number">0</span>)      cubeCoord = <span class="built_in">float3</span>(<span class="number">0.5</span>, <span class="number">0.5</span> - pos.y, <span class="number">0.5</span> - pos.x); </span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span>(split == <span class="number">1</span>) cubeCoord = <span class="built_in">float3</span>(<span class="number">-0.5</span>, <span class="number">0.5</span> - pos.y, pos.x - <span class="number">0.5</span>); </span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span>(split == <span class="number">2</span>) cubeCoord = <span class="built_in">float3</span>(pos.x - <span class="number">0.5</span>, <span class="number">0.5</span>, pos.y - <span class="number">0.5</span>); </span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span>(split == <span class="number">3</span>) cubeCoord = <span class="built_in">float3</span>(pos.x - <span class="number">0.5</span>, <span class="number">-0.5</span>, <span class="number">0.5</span> - pos.y); </span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span>(split == <span class="number">4</span>) cubeCoord = <span class="built_in">float3</span>(pos.x - <span class="number">0.5</span>, <span class="number">0.5</span> - pos.y, <span class="number">0.5</span>); </span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span>(split == <span class="number">5</span>) cubeCoord = <span class="built_in">float3</span>(<span class="number">0.5</span> - pos.x, <span class="number">0.5</span> - pos.y, <span class="number">-0.5</span>)；</span><br></pre></td></tr></table></figure>
+<p>下面的 PS 负责合成阴影：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> float3 offset[<span class="number">6</span>] = &#123;   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0.5</span>, <span class="number">0.5</span>, <span class="number">0.5</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">-0.5</span>, <span class="number">0.5</span>, <span class="number">-0.5</span>),   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">-0.5</span>, <span class="number">0.5</span>, <span class="number">-0.5</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">-0.5</span>, <span class="number">-0.5</span>, <span class="number">0.5</span>),   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">-0.5</span>, <span class="number">0.5</span>, <span class="number">0.5</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0.5</span>, <span class="number">0.5</span>, <span class="number">-0.5</span>)</span><br><span class="line">&#125;; </span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> float3 mulX[<span class="number">6</span>] = &#123;   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">-1</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>),   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">-1</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">&#125;; </span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> float3 mulY[<span class="number">6</span>] = &#123;   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">-1</span>, <span class="number">0</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">-1</span>, <span class="number">0</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>),   </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">-1</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">-1</span>, <span class="number">0</span>), </span><br><span class="line">		<span class="built_in">float3</span>(<span class="number">0</span>, <span class="number">-1</span>, <span class="number">0</span>)</span><br><span class="line">&#125;; </span><br><span class="line">SamplerComparisonState shadowMapSampler &#123;   </span><br><span class="line">		ComparisonFunc = Less;   </span><br><span class="line">		Filter = COMPARISON_MIN_MAG_LINEAR_MIP_POINT; </span><br><span class="line">&#125;; </span><br><span class="line"><span class="function">float4 <span class="title">PS_RenderShadows</span><span class="params">(PS_INPUT In)</span> : SV_Target &#123;</span>   </span><br><span class="line">		<span class="keyword">float</span> light = <span class="number">1.0f</span>;   </span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> split = <span class="number">0</span>; split &lt; numSplits; split++) &#123;     </span><br><span class="line">				<span class="keyword">if</span>(In.distance &gt; splitEnd[split]) &#123;       </span><br><span class="line">						float4 texpos = In.texturePos[split];       </span><br><span class="line">						texpos.xyz /= texpos.w;       </span><br><span class="line">						<span class="comment">// Cube map vector lookup    </span></span><br><span class="line">						float3 cubeCoord = offset[split] + mulX[split] * texpos.x +  mulY[split] * texpos.y;       </span><br><span class="line">						<span class="comment">// Don&#x27;t sample outside the border.    </span></span><br><span class="line">						<span class="keyword">if</span>(<span class="built_in">min</span>(pos.x, pos.y) &gt; <span class="number">0</span> &amp;&amp; <span class="built_in">max</span>(pos.x, pos.y) &lt; <span class="number">1</span>) &#123;         </span><br><span class="line">								light = shadowMapCube.<span class="built_in">SampleCmpLevelZero</span>(shadowMapSampler, cubeCoord, texpos.z);       </span><br><span class="line">						&#125;       </span><br><span class="line">						<span class="keyword">break</span>;     </span><br><span class="line">				&#125;   </span><br><span class="line">		&#125;   </span><br><span class="line">		<span class="keyword">return</span> light; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>考虑了处理额外边界条件的情况，这一方法比起采样材质序列减少了 25 条指令，但这会导致分割数目恒为 6 ，这在很多情况下都会浪费内存。</p>
+<h1 id="更多的优化"><a class="markdownIt-Anchor" href="#更多的优化"></a> 更多的优化</h1>
+<p>为了提高 PSSM 的阴影质量，还可以使用以下的方法：</p>
+<ul>
+<li>滤波技术：使用 PCF，VSM 等方法对 SM 进行滤波以减少走样</li>
+<li>打包材质：在材质采样器数量较少时，可以将不同的 SM 打包到一个材质内</li>
+<li>结合不同的算法使用：一种有趣的分割算法的用途是在不同的分割内使用不同的 SM 方法，如 PSM，LiSPSM，TSM 等</li>
+<li>可变的材质分辨率：在不同的分割内使用不同的分辨率以减少材质生成和储存的花费</li>
+<li>在线性空间处理深度</li>
+</ul>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/" title="《GPU Gem3》第十章笔记 - PSSM | Notes for GPU Gems 3 Chapter 10 - Parallel-Split Shadow Maps on Programmable GPUs" target="_blank" rel="external">https://blog.apassbydreg.work/2022/03/GPUGems3-ch10/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../GPUGems3-ch11/" title="《GPU Gem3》第十一章笔记 - Robust Shadow Volumes | Notes for GPU Gems 3 Chapter 11 - Efficient and Robust Shadow Volumes Using Hierarchical Occlusion Culling and Geometry Shaders"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../GPP-ch01/" title="《游戏编程模式》第一章笔记 | Notes for Game Programming Patterns Chapter 01"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

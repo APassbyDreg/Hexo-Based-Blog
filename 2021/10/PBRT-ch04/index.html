@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>PBRT 第四章笔记 | Notes for PBRT Chapter 04 - Primitives and Intersection Acceleration | Blog of Martin Z He</title>
+  <meta name="description" content="4.1 Primitive Interface and Geometric Primitives 抽象的 Primitive 基类提供了连接几何系统和着色系统的桥梁 123456789101112131415&#x2F;&#x2F; Primitive Declarationsclass Primitive &amp;#123;  public:    &#x2F;&#x2F; Primitive Interface    virtual ~">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PBRT 第四章笔记 | Notes for PBRT Chapter 04 - Primitives and Intersection Acceleration">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/10/PBRT-ch04/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="4.1 Primitive Interface and Geometric Primitives 抽象的 Primitive 基类提供了连接几何系统和着色系统的桥梁 123456789101112131415&#x2F;&#x2F; Primitive Declarationsclass Primitive &amp;#123;  public:    &#x2F;&#x2F; Primitive Interface    virtual ~">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Primitives%20and%20hierarchy.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/BVH%20choose%20split%20axis.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/BVH%20split%20bucketing.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Morton%20Basic.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/LBVH%20treelet%20clusters.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/BVH%20linearization.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/kd%20tree%20splits.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Overlapping%20bboxes.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/kd%20ray%20traversal.svg">
+<meta property="article:published_time" content="2021-10-30T16:58:53.000Z">
+<meta property="article:modified_time" content="2021-11-04T14:21:29.660Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="PBRT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Primitives%20and%20hierarchy.svg">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/10/PBRT-ch04/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#41-primitive-interface-and-geometric-primitives"><span class="toc-number">1.</span> <span class="toc-text"> 4.1 Primitive Interface and Geometric Primitives</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#411-geometric-primitives"><span class="toc-number">1.1.</span> <span class="toc-text"> 4.1.1 Geometric Primitives</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#transformedprimitive-object-instancing-and-animated-primitives"><span class="toc-number">1.2.</span> <span class="toc-text"> TransformedPrimitive: Object Instancing and Animated Primitives</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#object-instancing"><span class="toc-number">1.2.1.</span> <span class="toc-text"> Object Instancing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9A%E4%BD%93%E5%8A%A8%E7%94%BB"><span class="toc-number">1.2.2.</span> <span class="toc-text"> 刚体动画</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#42-aggregates"><span class="toc-number">2.</span> <span class="toc-text"> 4.2 Aggregates</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#43-bounding-volume-hierarchies-bvh"><span class="toc-number">3.</span> <span class="toc-text"> 4.3 Bounding Volume Hierarchies (BVH)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#431-bvh-%E7%9A%84%E6%9E%84%E5%BB%BA"><span class="toc-number">3.1.</span> <span class="toc-text"> 4.3.1 BVH 的构建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#432-sah-%E5%88%86%E5%89%B2%E7%AE%97%E6%B3%95"><span class="toc-number">3.2.</span> <span class="toc-text"> 4.3.2 SAH 分割算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#433-linear-bvh"><span class="toc-number">3.3.</span> <span class="toc-text"> 4.3.3 Linear BVH</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#morton-codes"><span class="toc-number">3.3.1.</span> <span class="toc-text"> Morton Codes</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#hlbvh"><span class="toc-number">3.3.2.</span> <span class="toc-text"> HLBVH</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#434-bvh-%E7%9A%84%E5%8E%8B%E7%BC%A9%E5%92%8C%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96"><span class="toc-number">3.4.</span> <span class="toc-text"> 4.3.4 BVH 的压缩和索引优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#435-bvh-%E7%9A%84%E9%81%8D%E5%8E%86"><span class="toc-number">3.5.</span> <span class="toc-text"> 4.3.5 BVH 的遍历</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#44-kd-tree-accelerator"><span class="toc-number">4.</span> <span class="toc-text"> 4.4 Kd-Tree Accelerator</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#441-%E6%A0%91%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95"><span class="toc-number">4.1.</span> <span class="toc-text"> 4.4.1 树的表示方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#442-%E5%BB%BA%E6%A0%91%E8%BF%87%E7%A8%8B"><span class="toc-number">4.2.</span> <span class="toc-text"> 4.4.2 建树过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#443-kd-tree-%E7%9A%84%E9%81%8D%E5%8E%86"><span class="toc-number">4.3.</span> <span class="toc-text"> 4.4.3 kd-tree 的遍历</span></a></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-PBRT-ch04" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PBRT 第四章笔记 | Notes for PBRT Chapter 04 - Primitives and Intersection Acceleration
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-10-30T16:58:53.000Z" itemprop="datePublished">2021-10-31</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/PBRT/" rel="tag">PBRT</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 5.6k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 23 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="41-primitive-interface-and-geometric-primitives"><a class="markdownIt-Anchor" href="#41-primitive-interface-and-geometric-primitives"></a> 4.1 Primitive Interface and Geometric Primitives</h1>
+<p>抽象的 <code>Primitive</code> 基类提供了连接几何系统和着色系统的桥梁</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Primitive Declarations</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Primitive</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Primitive Interface</span></span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">Primitive</span>();</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Bounds3f <span class="title">WorldBound</span><span class="params">()</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">bool</span> <span class="title">Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;r, SurfaceInteraction *)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">bool</span> <span class="title">IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;r)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">const</span> AreaLight *<span class="title">GetAreaLight</span><span class="params">()</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">const</span> Material *<span class="title">GetMaterial</span><span class="params">()</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *isect,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            MemoryArena &amp;arena,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>前三个函数均在上一节中有所提及，第四个 <code>GetAreaLight</code> 函数则会返回一个指向该几何体的发光分布（emission distribution）的指针。这是为了统一作为光源的几何体和其它的几何体类型；第五个 <code>GetMaterial</code> 函数则返回了该几何体对应的材质信息。</p>
+<p>最后一个函数 <code>ComputeScatteringFunctions</code> 会初始化参数 <code>isect</code> 中用于表示局部光线散射信息的表示（如 BSDF、BSSRDF 等）</p>
+<h2 id="411-geometric-primitives"><a class="markdownIt-Anchor" href="#411-geometric-primitives"></a> 4.1.1 Geometric Primitives</h2>
+<p><code>Geometric Primitives</code> 类表示了场景中的单个物体，每个 <code>Geometric Primitives</code> 类中都有且只有一个 <code>Shape</code> 类型的实例。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GeometricPrimitive</span> :</span> <span class="keyword">public</span> Primitive &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// GeometricPrimitive Public Methods</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Bounds3f <span class="title">WorldBound</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">bool</span> <span class="title">Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;r, SurfaceInteraction *isect)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">bool</span> <span class="title">IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;r)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="built_in">GeometricPrimitive</span>(<span class="keyword">const</span> std::shared_ptr&lt;Shape&gt; &amp;shape,</span><br><span class="line">                       <span class="keyword">const</span> std::shared_ptr&lt;Material&gt; &amp;material,</span><br><span class="line">                       <span class="keyword">const</span> std::shared_ptr&lt;AreaLight&gt; &amp;areaLight,</span><br><span class="line">                       <span class="keyword">const</span> MediumInterface &amp;mediumInterface);</span><br><span class="line">    <span class="function"><span class="keyword">const</span> AreaLight *<span class="title">GetAreaLight</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">const</span> Material *<span class="title">GetMaterial</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *isect,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    MemoryArena &amp;arena, TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// GeometricPrimitive Private Data</span></span><br><span class="line">    std::shared_ptr&lt;Shape&gt; shape;</span><br><span class="line">    std::shared_ptr&lt;Material&gt; material;</span><br><span class="line">    std::shared_ptr&lt;AreaLight&gt; areaLight;</span><br><span class="line">    MediumInterface mediumInterface;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>除了指向 <code>Shape</code> 的指针外，它还保存了指向光照和材质信息的指针，最后的 <code>mediumInterface</code> 则被用于体积渲染中。</p>
+<p>本类中的前三个函数均基本都是重定向至其 <code>shape</code> 指针的对应函数上。<code>Intersect</code> 函数则额外增加了初始化 <code>isect</code> 参数中的 <code>mediumInterface</code> 成员的步骤。</p>
+<h2 id="transformedprimitive-object-instancing-and-animated-primitives"><a class="markdownIt-Anchor" href="#transformedprimitive-object-instancing-and-animated-primitives"></a> TransformedPrimitive: Object Instancing and Animated Primitives</h2>
+<p><code>TransformedPrimitive</code> 类保存了一个 <code>Primitive</code> 和一个 <code>AnimatedTransform</code> 。这个额外的信息让 object instancing 和为几何体设置动画变得可能。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TransformedPrimitive</span> :</span> <span class="keyword">public</span> Primitive &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// TransformedPrimitive Public Methods</span></span><br><span class="line">    <span class="built_in">TransformedPrimitive</span>(std::shared_ptr&lt;Primitive&gt; &amp;primitive,</span><br><span class="line">                         <span class="keyword">const</span> AnimatedTransform &amp;PrimitiveToWorld);</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;r, SurfaceInteraction *in)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;r)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">const</span> AreaLight *<span class="title">GetAreaLight</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> <span class="literal">nullptr</span>; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">const</span> Material *<span class="title">GetMaterial</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> <span class="literal">nullptr</span>; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *isect,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    MemoryArena &amp;arena, TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span> </span>&#123; <span class="comment">/* 这个函数不应该被运行，运行时会报错 */</span> &#125;</span><br><span class="line">    <span class="function">Bounds3f <span class="title">WorldBound</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> PrimitiveToWorld.<span class="built_in">MotionBounds</span>(primitive-&gt;<span class="built_in">WorldBound</span>());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// TransformedPrimitive Private Data</span></span><br><span class="line">    std::shared_ptr&lt;Primitive&gt; primitive;</span><br><span class="line">    <span class="keyword">const</span> AnimatedTransform PrimitiveToWorld;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>本类中的 <code>GetAreaLight, GetMaterial, ComputeScatteringFunctions</code> 不能直接调用（会报错），真正需要调用的是这个对象拥有的 primitive 的对应函数。</p>
+<blockquote>
+<p>不是很明白这里为啥不直接转发 <code>primitive</code> 成员的对应函数</p>
+</blockquote>
+<h3 id="object-instancing"><a class="markdownIt-Anchor" href="#object-instancing"></a> Object Instancing</h3>
+<p>我将这个词理解为物体的复用。当场景中存在大量重复的物体时，这些物体本质上只有其 transform 不同而已。在本类的情况下，可以让大量不同的 <code>TransformedPrimitive</code> 指向相同的 <code>Primitive</code> ，而只有 transform 不一样。</p>
+<h3 id="刚体动画"><a class="markdownIt-Anchor" href="#刚体动画"></a> 刚体动画</h3>
+<p>通过在底层 shape 之上再叠加一层变换可以给更加方便的动画设置提供支持。虽然这样会增加一部分成本，但让底层的 shape 知晓更多的变换信息会产生更多的内存和帧间处理的消耗，这与本类的初衷背道而驰</p>
+<h1 id="42-aggregates"><a class="markdownIt-Anchor" href="#42-aggregates"></a> 4.2 Aggregates</h1>
+<p><code>Aggregate</code> 类提供了将多个几何体聚合为单个几何体的方式。这种将不同物体聚合而视作一个的方法在构建加速结构中非常常用。这也是一个抽象类，其中的任何函数都不该被调用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Aggregate</span> :</span> <span class="keyword">public</span> Primitive &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Aggregate Public Methods</span></span><br><span class="line">    <span class="function"><span class="keyword">const</span> AreaLight *<span class="title">GetAreaLight</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">const</span> Material *<span class="title">GetMaterial</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">ComputeScatteringFunctions</span><span class="params">(SurfaceInteraction *isect,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    MemoryArena &amp;arena, TransportMode mode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                    <span class="keyword">bool</span> allowMultipleLobes)</span> <span class="keyword">const</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>不是很明白这里不用就不用为啥不直接留空啊，基类的这几个函数本来就没有函数体</p>
+</blockquote>
+<h1 id="43-bounding-volume-hierarchies-bvh"><a class="markdownIt-Anchor" href="#43-bounding-volume-hierarchies-bvh"></a> 4.3 Bounding Volume Hierarchies (BVH)</h1>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Primitives%20and%20hierarchy.svg" style="max-height: 40vh; margin: 10px"/></center>
+<p>BVH 以一种树状的结构加速光线相交测试。当光线与树中任意节点的包围盒没有相交时，该节点的整个子树都会被丢弃。在这种结构中，每一个几何体均在树中只出现一次，这种特性不仅避免了重复将同一个物体和光线求交，还使得这种加速算法的空间消耗有了明确的上界。</p>
+<p>与下一节要讨论的 kd-tree 相比，BVH 虽然效率上稍微低一些，但优势在于构建时间较短、且不易受到各类数值误差的影响。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BVHAccel</span> :</span> <span class="keyword">public</span> Aggregate &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// BVHAccel Public Types</span></span><br><span class="line">    <span class="class"><span class="keyword">enum</span> <span class="keyword">class</span> <span class="title">SplitMethod</span> &#123;</span> SAH, HLBVH, Middle, EqualCounts &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// BVHAccel Public Methods</span></span><br><span class="line">    <span class="built_in">BVHAccel</span>(std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; p,</span><br><span class="line">             <span class="keyword">int</span> maxPrimsInNode = <span class="number">1</span>,</span><br><span class="line">             SplitMethod splitMethod = SplitMethod::SAH);</span><br><span class="line">    <span class="function">Bounds3f <span class="title">WorldBound</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line">    ~<span class="built_in">BVHAccel</span>();</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray, SurfaceInteraction *isect)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// BVHAccel Private Methods</span></span><br><span class="line">    <span class="function">BVHBuildNode *<span class="title">recursiveBuild</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        MemoryArena &amp;arena, std::vector&lt;BVHPrimitiveInfo&gt; &amp;primitiveInfo,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> *totalNodes,</span></span></span><br><span class="line"><span class="params"><span class="function">        std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; &amp;orderedPrims)</span></span>;</span><br><span class="line">    <span class="function">BVHBuildNode *<span class="title">HLBVHBuild</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        MemoryArena &amp;arena, <span class="keyword">const</span> std::vector&lt;BVHPrimitiveInfo&gt; &amp;primitiveInfo,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="keyword">int</span> *totalNodes,</span></span></span><br><span class="line"><span class="params"><span class="function">        std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; &amp;orderedPrims)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function">BVHBuildNode *<span class="title">emitLBVH</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        BVHBuildNode *&amp;buildNodes,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="keyword">const</span> std::vector&lt;BVHPrimitiveInfo&gt; &amp;primitiveInfo,</span></span></span><br><span class="line"><span class="params"><span class="function">        MortonPrimitive *mortonPrims, <span class="keyword">int</span> nPrimitives, <span class="keyword">int</span> *totalNodes,</span></span></span><br><span class="line"><span class="params"><span class="function">        std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; &amp;orderedPrims,</span></span></span><br><span class="line"><span class="params"><span class="function">        std::atomic&lt;<span class="keyword">int</span>&gt; *orderedPrimsOffset, <span class="keyword">int</span> bitIndex)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function">BVHBuildNode *<span class="title">buildUpperSAH</span><span class="params">(MemoryArena &amp;arena,</span></span></span><br><span class="line"><span class="params"><span class="function">                                std::vector&lt;BVHBuildNode *&gt; &amp;treeletRoots,</span></span></span><br><span class="line"><span class="params"><span class="function">                                <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> *totalNodes)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">flattenBVHTree</span><span class="params">(BVHBuildNode *node, <span class="keyword">int</span> *offset)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// BVHAccel Private Data</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> maxPrimsInNode;</span><br><span class="line">    <span class="keyword">const</span> SplitMethod splitMethod;</span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; primitives;</span><br><span class="line">    LinearBVHNode *nodes = <span class="literal">nullptr</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>本类的构造函数会接收一个表示了不同的 BVH 构建方式的参数。在枚举类中，后两者是简单地在结构中点划分或者分为等量的两组，其性能都不算高，而前两者则会在接下来详细说明。</p>
+<h2 id="431-bvh-的构建"><a class="markdownIt-Anchor" href="#431-bvh-的构建"></a> 4.3.1 BVH 的构建</h2>
+<p>BVH 的构建一般分为三步：</p>
+<ol>
+<li>每一个物体的包围盒会被计算并放在一个数组中</li>
+<li>使用传入的 <code>splitMethod</code> 参数指向的算法构建二叉树</li>
+<li>将二叉树转化为更加紧凑、高效的无指针表示</li>
+</ol>
+<p>为了构建 BVH ，需要记录的除了包围盒以外还有包围盒的中心和索引。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">BVHPrimitiveInfo</span> &#123;</span></span><br><span class="line">    <span class="built_in">BVHPrimitiveInfo</span>(<span class="keyword">size_t</span> primitiveNumber, <span class="keyword">const</span> Bounds3f &amp;bounds)</span><br><span class="line">        : <span class="built_in">primitiveNumber</span>(primitiveNumber), <span class="built_in">bounds</span>(bounds),</span><br><span class="line">          <span class="built_in">centroid</span>(<span class="number">.5</span>f * bounds.pMin + <span class="number">.5</span>f * bounds.pMax) &#123; &#125;</span><br><span class="line">    <span class="keyword">size_t</span> primitiveNumber;</span><br><span class="line">    Bounds3f bounds;</span><br><span class="line">    Point3f centroid;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这些信息将被用于构建二叉树结构。不同的算法使用的构建方式并不相同，这将在接下来说明。在构建时同样完成的还有节点总数的设置，以及另一组指向几何体的指针（顺序与原有的可能有区别，因此需要将其与原有指针交换）。构建完成后，函数会返回申请在 <code>MemoryArena</code> 上的二叉树的根节点的指针。此时使用的结构是 <code>BVHBuildNode</code> ，其内容如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">BVHBuildNode</span> &#123;</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">InitLeaf</span><span class="params">(<span class="keyword">int</span> first, <span class="keyword">int</span> n, <span class="keyword">const</span> Bounds3f &amp;b)</span> </span>&#123; ... &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">InitInterior</span><span class="params">(<span class="keyword">int</span> axis, BVHBuildNode *c0, BVHBuildNode *c1)</span> </span>&#123; ... &#125;</span><br><span class="line">    Bounds3f bounds;</span><br><span class="line">    BVHBuildNode *children[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">int</span> splitAxis, firstPrimOffset, nPrimitives;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>节点中保存最终指向的物体的指针的方式是通过两个整数 <code>firstPrimOffset, nPrimitives</code> 分别表示在指针数组中的起始偏移和几何体数目。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/BVH%20choose%20split%20axis.svg" style="max-height: 40vh; margin: 10px"/></center>
+<p>在每个节点内部，分割算法会选择坐标轴中的一个作为基准（PBRT 中选择了坐标范围最广的轴），确定一个分割位置使得该位置两侧的几何体分别属于下一级不同的节点。这个过程持续到该节点中只有一个几何体，或者该节点中所有几何体的中心都一样为止。每产生一个叶子节点，其中的几何体指针就会被增加到初始为空的 <code>orderedPrims</code> 的最后以形成一个良好排列的数组。</p>
+<p>分割完成后，会根据最终的节点数量申请对应大小的内存保存更加紧凑的结构 <code>LinearBVHNodes</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">LinearBVHNode</span> &#123;</span></span><br><span class="line">    Bounds3f bounds;</span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        <span class="keyword">int</span> primitivesOffset;   <span class="comment">// leaf</span></span><br><span class="line">        <span class="keyword">int</span> secondChildOffset;  <span class="comment">// interior</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">uint16_t</span> nPrimitives;  <span class="comment">// 0 -&gt; interior node</span></span><br><span class="line">    <span class="keyword">uint8_t</span> axis;          <span class="comment">// interior node: xyz</span></span><br><span class="line">    <span class="keyword">uint8_t</span> pad[<span class="number">1</span>];        <span class="comment">// ensure 32 byte total size</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="432-sah-分割算法"><a class="markdownIt-Anchor" href="#432-sah-分割算法"></a> 4.3.2 SAH 分割算法</h2>
+<p>所有分割算法都试图找到一种分割方式，使得在节点上进行光线相交计算的开销尽可能的少。寻找到一个这样的全局最优解是十分困难的，所以各种算法一般会构建一个 cost 模型来替代估计实际的开销、并使用特定的算法（如贪心算法）找到这个 cost 模型的局部最优解。</p>
+<p>SAH 的 cost 模型如下：</p>
+<p>设一个聚合中有 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>N</mi></mrow><annotation encoding="application/x-tex">N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.10903em;">N</span></span></span></span> 个几何体，在每个几何体上做相交测试的开销分别是 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>t</mi><mrow><mi>i</mi><mi>s</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>o</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">t_{isect}(o_i)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">o</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> ，则当这个节点是叶子节点时的总开销为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>C</mi><mi>l</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><msub><mi>t</mi><mrow><mi>i</mi><mi>s</mi><mi>e</mi><mi>c</mi><mi>t</mi><mo stretchy="false">(</mo><msub><mi>o</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow></msub></mrow><annotation encoding="application/x-tex">C_l = \sum_{i=1}^N t_{isect(o_i)}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.01968em;">l</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.106005em;vertical-align:-1.277669em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.8283360000000002em;"><span style="top:-1.872331em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.050005em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.3000050000000005em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.10903em;">N</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.5198em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">t</span><span class="mopen mtight">(</span><span class="mord mtight"><span class="mord mathdefault mtight">o</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3280857142857143em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span><span class="mclose mtight">)</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3551999999999999em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<p>如果将这个聚合中的几何体分为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>A</mi><mo separator="true">,</mo><mi>B</mi></mrow><annotation encoding="application/x-tex">A,B</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8777699999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">A</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.05017em;">B</span></span></span></span> 两部分，使得可以使用 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>t</mi><mrow><mi>t</mi><mi>r</mi><mi>a</mi><mi>v</mi></mrow></msub></mrow><annotation encoding="application/x-tex">t_{trav}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.76508em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight" style="margin-right:0.02778em;">r</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">v</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 的时间确定某光线需要继续测试哪些部分的相交情况（概率分别为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>p</mi><mi>A</mi></msub><mo separator="true">,</mo><msub><mi>p</mi><mi>B</mi></msub></mrow><annotation encoding="application/x-tex">p_A, p_B</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> ），则这种中间节点的总开销为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>C</mi><mi>i</mi></msub><mo>=</mo><msub><mi>t</mi><mrow><mi>t</mi><mi>r</mi><mi>a</mi><mi>v</mi></mrow></msub><mo>+</mo><msub><mi>p</mi><mi>A</mi></msub><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><msub><mi>N</mi><mi>A</mi></msub></munderover><msub><mi>t</mi><mrow><mi>i</mi><mi>s</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>+</mo><msub><mi>p</mi><mi>B</mi></msub><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><msub><mi>N</mi><mi>B</mi></msub></munderover><msub><mi>t</mi><mrow><mi>i</mi><mi>s</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>b</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">C_i = t_{trav} + p_A\sum_{i=0}^{N_A}t_{isect}(a_i) + p_B\sum_{i=0}^{N_B}t_{isect}(b_i) 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.76508em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight" style="margin-right:0.02778em;">r</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">v</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:3.1173100000000002em;vertical-align:-1.277669em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.8396410000000003em;"><span style="top:-1.872331em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">0</span></span></span></span><span style="top:-3.050005em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.31131em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3567071428571427em;margin-left:-0.10903em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathdefault mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.14329285714285717em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:3.1173100000000002em;vertical-align:-1.277669em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.8396410000000003em;"><span style="top:-1.872331em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">0</span></span></span></span><span style="top:-3.050005em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.31131em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3567071428571427em;margin-left:-0.10903em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.14329285714285717em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>PBRT 基于构建和使用的效率考量制定了以下的规则：</p>
+<ol>
+<li>假设对于所有几何体 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>t</mi><mrow><mi>i</mi><mi>s</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">t_{isect}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.76508em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 均相等且约等于 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>t</mi><mrow><mi>t</mi><mi>r</mi><mi>a</mi><mi>v</mi></mrow></msub></mrow><annotation encoding="application/x-tex">t_{trav}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.76508em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight" style="margin-right:0.02778em;">r</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">v</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 的 8 倍，并使用每个部分的表面积估计 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>p</mi><mi>A</mi></msub><mo separator="true">,</mo><msub><mi>p</mi><mi>B</mi></msub></mrow><annotation encoding="application/x-tex">p_A, p_B</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> （这也是 SAH 算法名字的来源）</li>
+<li>使用固定数量的（代码中是 12 个）均匀分布的候选位置确定分割方法，而不是尝试所有可能的位置</li>
+<li>当节点中几何体的数量小于一定值（代码中是 2 个）时，直接将节点中的几何体分割为两个含有同样数量的叶子节点，因为此时使用 SAH 算法对效率并没有明显提高但又很耗费资源</li>
+<li>只有当分割后的 cost 低于分割前时，分割才会发生</li>
+</ol>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/BVH%20split%20bucketing.svg" style="max-height: 25vh; margin: 10px"/></center>
+<h2 id="433-linear-bvh"><a class="markdownIt-Anchor" href="#433-linear-bvh"></a> 4.3.3 Linear BVH</h2>
+<p>使用 SAH 构建的 BVH 有两个主要的缺陷：</p>
+<ol>
+<li>一个场景中的几何体会被在构建BVH时重复计算很多遍表面积</li>
+<li>自上而下的 BVH 构建结构难以并行化</li>
+</ol>
+<p>为了解决这些问题，诞生了 LBVH 算法。在 LBVH 中，树的生成时间与几何体数量线性相关、且可以快速生成可供独立并行的分块，提高了其并行程度。其最主要的特点是将 BVH 的构建算法理解为一个排序算法。它使用 Morton Codes 将高维空间中相邻的点映射到在一维的线上的点，从而使他们能够被更容易地排序。当节点被排序完成后，空间上相邻的几何体群在排序后的序列中也相邻。</p>
+<h3 id="morton-codes"><a class="markdownIt-Anchor" href="#morton-codes"></a> Morton Codes</h3>
+<p>这种编码方式并不复杂，实际上就相当于将高维的点的各个坐标的二进制表示中每个 bit 交叉排列，如点 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x, y)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span></span> 的 Morton Codes 表示就是 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo>⋯</mo><msub><mi>y</mi><mrow><mi>b</mi><mn>2</mn></mrow></msub><msub><mi>x</mi><mrow><mi>b</mi><mn>2</mn></mrow></msub><msub><mi>y</mi><mrow><mi>b</mi><mn>1</mn></mrow></msub><msub><mi>x</mi><mrow><mi>b</mi><mn>1</mn></mrow></msub><msub><mi>y</mi><mrow><mi>b</mi><mn>0</mn></mrow></msub><msub><mi>x</mi><mrow><mi>b</mi><mn>0</mn></mrow></msub></mrow><annotation encoding="application/x-tex">\cdots y_{b2}x_{b2}y_{b1}x_{b1}y_{b0}x_{b0}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">b</span><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">b</span><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">b</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">b</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">b</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">b</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></p>
+<p>这种编码用一种类似 Z 字分型的方式将空间中的区域连成一维的线，示意图如下：</p>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Morton%20Basic.svg" style="max-height: 30vh; margin: 10px"/></center>
+<h3 id="hlbvh"><a class="markdownIt-Anchor" href="#hlbvh"></a> HLBVH</h3>
+<p>LBVH 就相当于使用简单的等分点分割方法构建的 BVH ，它直接在一个节点的每个坐标轴的坐标范围的等分点处切分平面。这种结构并不足够高效。因此此处引入了新的 HLBVH ，首先使用 LBVH 算法构建底层的子树，接着在这些子树的基础上使用 SAH 算法构建更高效的 BVH 结构</p>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/LBVH%20treelet%20clusters.svg" style="max-height: 25vh; margin: 10px"/></center>
+<p>HLBVH 的构建流程如下：</p>
+<ol>
+<li>首先计算所有几何体的最大的包围盒和每个几何体对应的 Morton Codes</li>
+<li>使用基数排序算法排序所有节点，每个排序轮次会使用多位</li>
+<li>在得到排序后的几何体后，将临近区域内的几何体首先聚合称为底层的子树，子树的生成规则如下：
+<ol>
+<li>每个子树中的节点应该都在同一块相邻的区域中（判断方法是 mask 后的 morton code 一致，即表示基层的一部分 code 相同）</li>
+<li>每个子树中的节点数量应该小于某个值，当数量过多的时候会修改 mask 尝试更加细的分解</li>
+<li>当 mask 缩小到最小时，所有节点都在一个 morton code 表示的最小单元格中，此时无条件生成一个子树</li>
+<li>在串行完成第一部分粗分类后，后两部分将会并行地完成</li>
+</ol>
+</li>
+<li>将生成的子树列表视作几何体列表使用 SAH 构建上层的 BVH</li>
+</ol>
+<h2 id="434-bvh-的压缩和索引优化"><a class="markdownIt-Anchor" href="#434-bvh-的压缩和索引优化"></a> 4.3.4 BVH 的压缩和索引优化</h2>
+<p>BVH 构建完成后需要被进一步优化为更加缓存和内存高效的模块。最终的 BVH 会被使用深度优先的算法展开并储存在一段连续的线性内存空间中。这种结构让每个节点的第一个子节点都必定是该节点的直接后继，因此只需要显式储存指向第二个子节点的偏移量即可。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/BVH%20linearization.svg" style="max-height: 20vh; margin: 10px"/></center>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">LinearBVHNode</span> &#123;</span></span><br><span class="line">    Bounds3f bounds;</span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        <span class="keyword">int</span> primitivesOffset;    <span class="comment">// leaf</span></span><br><span class="line">        <span class="keyword">int</span> secondChildOffset;   <span class="comment">// interior</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">uint16_t</span> nPrimitives;  <span class="comment">// 0 -&gt; interior node</span></span><br><span class="line">    <span class="keyword">uint8_t</span> axis;          <span class="comment">// interior node: xyz</span></span><br><span class="line">    <span class="keyword">uint8_t</span> pad[<span class="number">1</span>];        <span class="comment">// ensure 32 byte total size</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>整个结构体恰好只有 32 bytes ，使得它可以被直接放入一个 cache line 中优化缓存性能。</p>
+<p>整个线性结构的构建是一个精心设计的深度优先遍历算法：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">BVHAccel::flattenBVHTree</span><span class="params">(BVHBuildNode *node, <span class="keyword">int</span> *offset)</span> </span>&#123;</span><br><span class="line">    LinearBVHNode *linearNode = &amp;nodes[*offset];</span><br><span class="line">    linearNode-&gt;bounds = node-&gt;bounds;</span><br><span class="line">    <span class="keyword">int</span> myOffset = (*offset)++;</span><br><span class="line">    <span class="keyword">if</span> (node-&gt;nPrimitives &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">CHECK</span>(!node-&gt;children[<span class="number">0</span>] &amp;&amp; !node-&gt;children[<span class="number">1</span>]);</span><br><span class="line">        <span class="built_in">CHECK_LT</span>(node-&gt;nPrimitives, <span class="number">65536</span>);</span><br><span class="line">        linearNode-&gt;primitivesOffset = node-&gt;firstPrimOffset;</span><br><span class="line">        linearNode-&gt;nPrimitives = node-&gt;nPrimitives;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Create interior flattened BVH node</span></span><br><span class="line">        linearNode-&gt;axis = node-&gt;splitAxis;</span><br><span class="line">        linearNode-&gt;nPrimitives = <span class="number">0</span>;</span><br><span class="line">        <span class="built_in">flattenBVHTree</span>(node-&gt;children[<span class="number">0</span>], offset);</span><br><span class="line">        linearNode-&gt;secondChildOffset =</span><br><span class="line">            <span class="built_in">flattenBVHTree</span>(node-&gt;children[<span class="number">1</span>], offset);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> myOffset;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="435-bvh-的遍历"><a class="markdownIt-Anchor" href="#435-bvh-的遍历"></a> 4.3.5 BVH 的遍历</h2>
+<p>遍历 BVH 相当于递归地向下搜索中间节点，通过在途中抛弃与包围盒不会相交的节点提升效率。最后返回在叶子节点处调用几何体相交函数的结果。算法使用一个栈维护接下来需要访问的节点。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">BVHAccel::Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray, SurfaceInteraction *isect)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!nodes) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="function">ProfilePhase <span class="title">p</span><span class="params">(Prof::AccelIntersect)</span></span>;</span><br><span class="line">    <span class="keyword">bool</span> hit = <span class="literal">false</span>;</span><br><span class="line">    <span class="function">Vector3f <span class="title">invDir</span><span class="params">(<span class="number">1</span> / ray.d.x, <span class="number">1</span> / ray.d.y, <span class="number">1</span> / ray.d.z)</span></span>;</span><br><span class="line">    <span class="keyword">int</span> dirIsNeg[<span class="number">3</span>] = &#123;invDir.x &lt; <span class="number">0</span>, invDir.y &lt; <span class="number">0</span>, invDir.z &lt; <span class="number">0</span>&#125;;</span><br><span class="line">    <span class="comment">// Follow ray through BVH nodes to find primitive intersections</span></span><br><span class="line">    <span class="keyword">int</span> toVisitOffset = <span class="number">0</span>, currentNodeIndex = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> nodesToVisit[<span class="number">64</span>];</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="keyword">const</span> LinearBVHNode *node = &amp;nodes[currentNodeIndex];</span><br><span class="line">        <span class="comment">// Check ray against BVH node</span></span><br><span class="line">        <span class="keyword">if</span> (node-&gt;bounds.<span class="built_in">IntersectP</span>(ray, invDir, dirIsNeg)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (node-&gt;nPrimitives &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// Intersect ray with primitives in leaf BVH node</span></span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; node-&gt;nPrimitives; ++i)</span><br><span class="line">                    <span class="keyword">if</span> (primitives[node-&gt;primitivesOffset + i]-&gt;<span class="built_in">Intersect</span>(</span><br><span class="line">                            ray, isect))</span><br><span class="line">                        hit = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">if</span> (toVisitOffset == <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line">                currentNodeIndex = nodesToVisit[--toVisitOffset];</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Put far BVH node on _nodesToVisit_ stack, advance to near</span></span><br><span class="line">                <span class="comment">// node</span></span><br><span class="line">                <span class="keyword">if</span> (dirIsNeg[node-&gt;axis]) &#123;</span><br><span class="line">                    nodesToVisit[toVisitOffset++] = currentNodeIndex + <span class="number">1</span>;</span><br><span class="line">                    currentNodeIndex = node-&gt;secondChildOffset;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    nodesToVisit[toVisitOffset++] = node-&gt;secondChildOffset;</span><br><span class="line">                    currentNodeIndex = currentNodeIndex + <span class="number">1</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (toVisitOffset == <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line">            currentNodeIndex = nodesToVisit[--toVisitOffset];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> hit;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="44-kd-tree-accelerator"><a class="markdownIt-Anchor" href="#44-kd-tree-accelerator"></a> 4.4 Kd-Tree Accelerator</h1>
+<p>Binary space partitioning (BSP) 的算法通过平面适应性地分割空间。与 BVH 不同的是，这种算法并不会产生重叠的区域，而是在几何体刚好落在分割线中间时将它同时加入两侧计算。这种算法会递归地进行，直到节点中的几何体数量足够小或者树足够深的时候停止计算。因为分隔平面可以任意地放置在空间的任何位置，而三维空间的不同位置可以得到不同程度的细化，BSP 可以有效地适应场景中几何体分布不均匀的情况。</p>
+<p>BSP 算法的两种变体分别是 kd-tree 和 octrees 。kd-tree 简单地限制分割平面必须垂直于某个坐标轴，从而加速结构的构建和使用；而 octrees 则在 kd-tree 的基础上，在一次分割中同时使用三个垂直于不同坐标轴的平面将空间分为 8 份。一个简单的 kd-tree 构建过程实例如下：</p>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/kd%20tree%20splits.svg" style="max-height: 40vh; margin: 10px"/></center>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">KdTreeAccel</span> :</span> <span class="keyword">public</span> Aggregate &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">KdTreeAccel</span>(std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; p,</span><br><span class="line">                <span class="keyword">int</span> isectCost = <span class="number">80</span>, <span class="keyword">int</span> traversalCost = <span class="number">1</span>,</span><br><span class="line">                Float emptyBonus = <span class="number">0.5</span>, <span class="keyword">int</span> maxPrims = <span class="number">1</span>, <span class="keyword">int</span> maxDepth = <span class="number">-1</span>);</span><br><span class="line">    <span class="function">Bounds3f <span class="title">WorldBound</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> bounds; &#125;</span><br><span class="line">    ~<span class="built_in">KdTreeAccel</span>();</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray, SurfaceInteraction *isect)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray)</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">buildTree</span><span class="params">(<span class="keyword">int</span> nodeNum, <span class="keyword">const</span> Bounds3f &amp;bounds,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="keyword">const</span> std::vector&lt;Bounds3f&gt; &amp;primBounds, <span class="keyword">int</span> *primNums,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="keyword">int</span> nprims, <span class="keyword">int</span> depth,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="keyword">const</span> std::unique_ptr&lt;BoundEdge[]&gt; edges[<span class="number">3</span>], <span class="keyword">int</span> *prims0,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="keyword">int</span> *prims1, <span class="keyword">int</span> badRefines = <span class="number">0</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> isectCost, traversalCost, maxPrims;</span><br><span class="line">    <span class="keyword">const</span> Float emptyBonus;</span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Primitive&gt;&gt; primitives;</span><br><span class="line">    std::vector&lt;<span class="keyword">int</span>&gt; primitiveIndices;</span><br><span class="line">    KdAccelNode *nodes;</span><br><span class="line">    <span class="keyword">int</span> nAllocedNodes, nextFreeNode;</span><br><span class="line">    Bounds3f bounds;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="441-树的表示方法"><a class="markdownIt-Anchor" href="#441-树的表示方法"></a> 4.4.1 树的表示方法</h2>
+<p>kd-tree 也是一种二叉树，每个节点中均需要储存的信息和 BVH 相似。 kd-tree 的节点被包装为一个只有 8 byte 的结构体：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">KdAccelNode</span> &#123;</span></span><br><span class="line">	<span class="keyword">public</span>:</span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        Float split;                 <span class="comment">// Interior</span></span><br><span class="line">        <span class="keyword">int</span> onePrimitive;            <span class="comment">// Leaf</span></span><br><span class="line">        <span class="keyword">int</span> primitiveIndicesOffset;  <span class="comment">// Leaf</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        <span class="keyword">int</span> flags;       <span class="comment">// Both</span></span><br><span class="line">        <span class="keyword">int</span> nPrims;      <span class="comment">// Leaf</span></span><br><span class="line">        <span class="keyword">int</span> aboveChild;  <span class="comment">// Interior</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><code>KdAccelNode::flags</code> 的低二位被用于指示该节点的类型（沿 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo separator="true">,</mo><mi>z</mi></mrow><annotation encoding="application/x-tex">x,y,z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span> 分割的中间节点或叶子节点）。</p>
+<p>对于叶子节点，<code>KdAccelNode::flags</code> 的高 30 位保存了内含的几何体数量，当仅有一个几何体时，<code>KdAccelNode::onePrimitive</code> 保存了该几何体的序号，而当有多个几何体时，则在 <code>KdTreeAccel::primitiveIndices</code> 中按照节点编号顺序储存这各个节点之中的几何体编号序列为一个连续数组，并在节点的 <code>KdAccelNode::primitiveIndicesOffset</code> 中保存这一节点对应序列的首位偏移。</p>
+<p>对于中间节点，<code>KdAccelNode::split</code> 保存了分割的位置，而 <code>KdAccelNode::aboveChild</code> 的高 30 位则储存了在分割平面上方的子节点的偏移（和 BVH 的压缩方法一样，中间节点的直接后继就是它的其中一个子节点）</p>
+<h2 id="442-建树过程"><a class="markdownIt-Anchor" href="#442-建树过程"></a> 4.4.2 建树过程</h2>
+<p>在 <code>KdTreeAccel</code>  类中，所有的节点被储存在连续的空间中，使用指针 <code>node</code> 可以访问它们。而 <code>nextFreeNode, nAllocedNode</code> 则代表了下一个可用的节点的位置和当前已经申请的节点数量。</p>
+<p>在开始递归算法前，需要进行以下的初始化步骤：</p>
+<ol>
+<li>为了防止树的深度因为某些特殊情况不理智地增长，当最大深度没有被设置时，会使用一个经验值 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>8</mn><mo>+</mo><mn>1.3</mn><msub><mo><mi>log</mi><mo>⁡</mo></mo><mn>2</mn></msub><mi>N</mi></mrow><annotation encoding="application/x-tex">8 + 1.3\log_2 N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.72777em;vertical-align:-0.08333em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.93858em;vertical-align:-0.24414em;"></span><span class="mord">1</span><span class="mord">.</span><span class="mord">3</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop"><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.20696799999999996em;"><span style="top:-2.4558600000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.24414em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.10903em;">N</span></span></span></span> 来设置最大深度。</li>
+<li>预计算每个几何体的包围盒和所有几何体的包围盒，前者被预先放置在一个列表中</li>
+<li>初始化储存节点中的几何体序号的连续数组。由于根节点中一定包含了所有节点，因此其初始值为 0 ~ N - 1 的所有整数</li>
+<li>提前申请各种内存，如储存节点序列的内存块和暂存分割位置的信息结构体等</li>
+</ol>
+<p>递归的建树流程如下：</p>
+<ol>
+<li>找到下一个未使用但已申请的节点位置，如果已经用完了已申请的内存，则重新申请一个容量是原来的两倍的内存空间，并将原有内容迁移至新空间中</li>
+<li>当达到了深度限制或者几何体的数量足够少后，生成一个叶子节点终止递归</li>
+<li>如果这是一个内部节点，使用类似 SAH 的算法找到分割轴向和分割位置</li>
+</ol>
+<p>kd-tree 中使用的分割算法与 SAH 有几点不同：</p>
+<ol>
+<li>
+<p>kd-tree 中是有可能分割出不含任何几何体的子区域的。这种空区域不需要任何操作就可以被直接跳过，因此会在 cost 模型中产生一个额外的 bonus 项（下式中的 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>b</mi><mi>e</mi></msub></mrow><annotation encoding="application/x-tex">b_e</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 只在存在空区域时非零）：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>C</mi><mo>=</mo><msub><mi>t</mi><mrow><mi>t</mi><mi>r</mi><mi>a</mi><mi>v</mi></mrow></msub><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>b</mi><mi>e</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">(</mo><msub><mi>p</mi><mi>B</mi></msub><msub><mi>N</mi><mi>B</mi></msub><mo>+</mo><msub><mi>p</mi><mi>A</mi></msub><msub><mi>N</mi><mi>A</mi></msub><mo stretchy="false">)</mo><msub><mi>t</mi><mrow><mi>i</mi><mi>s</mi><mi>e</mi><mi>c</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">C = t_{trav} + (1-b_e)(p_BN_B + p_AN_A)t_{isect}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.76508em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight" style="margin-right:0.02778em;">r</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">v</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.10903em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.10903em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<blockquote>
+<p>这块没看懂为什么要引入这个 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>b</mi><mi>e</mi></msub></mrow><annotation encoding="application/x-tex">b_e</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></p>
+</blockquote>
+</li>
+<li>
+<p>通过扫描每个物体的包围盒的六条边可以找到最合适的分割位置，这六条边被保存在 <code>BoundEdge</code> 结构中。易知，在每个轴向上之多需要 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>2</mn><mi>N</mi></mrow><annotation encoding="application/x-tex">2N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">2</span><span class="mord mathdefault" style="margin-right:0.10903em;">N</span></span></span></span> 个这样的结构，这些内存会被事先申请并在各层之间复用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="keyword">class</span> <span class="title">EdgeType</span> &#123;</span> Start, End &#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">BoundEdge</span> &#123;</span></span><br><span class="line">    Float t;</span><br><span class="line">    <span class="keyword">int</span> primNum;</span><br><span class="line">    EdgeType type;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>在计算完将该节点直接作为叶子节点的 cost 后，函数会遍历所有该节点内的节点生成 <code>BoundEdge</code> 、然后在该轴向上排序所有边，最后从小到大地依次计算在每个位置上的 cost 。</p>
+<p>算法会首先在空间最大的轴向上尝试分割，如果找不到比直接生成叶子节点更好的分割方法的话还会尝试另外两个轴向。特别地，在一些极端情况下可能根本找不到有用的分割方法（如下图），此时就只能放弃分割而生成一个叶子节点。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Overlapping%20bboxes.svg" style="max-height: 25vh; margin: 10px"/></center>
+</li>
+<li>
+<p>在确认了分割位置后，可以简单地将各个分割后的几何体指针分配到传入子节点的数组 <code>prims0, prims1</code> 内。因为会直接创建左子节点，前者可以直接传入接下来的子树中，而后者需要保存到左子树完成后才被第二次的建树操作使用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Recursively initialize children nodes</span></span><br><span class="line">Float tSplit = edges[bestAxis][bestOffset].t;</span><br><span class="line">Bounds3f bounds0 = nodeBounds, bounds1 = nodeBounds;</span><br><span class="line">bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tSplit;</span><br><span class="line"><span class="built_in">buildTree</span>(nodeNum + <span class="number">1</span>, bounds0, allPrimBounds, prims0, n0, depth - <span class="number">1</span>, edges,</span><br><span class="line">          prims0, prims1 + nPrimitives, badRefines);</span><br><span class="line"><span class="keyword">int</span> aboveChild = nextFreeNode;</span><br><span class="line">nodes[nodeNum].<span class="built_in">InitInterior</span>(bestAxis, aboveChild, tSplit);</span><br><span class="line"><span class="built_in">buildTree</span>(aboveChild, bounds1, allPrimBounds, prims1, n1, depth - <span class="number">1</span>, edges,</span><br><span class="line">          prims0, prims1 + nPrimitives, badRefines);</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="443-kd-tree-的遍历"><a class="markdownIt-Anchor" href="#443-kd-tree-的遍历"></a> 4.4.3 kd-tree 的遍历</h2>
+<center><img src="https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/kd%20ray%20traversal.svg" style="max-height: 40vh; margin: 10px"/></center>
+<p>上图展示了 kd-tree 遍历的流程，在与当前中间节点的区域相交后，会计算出相交的 <code>tmin, tmax, tsplit</code> 。向子节点的遍历会从靠近 <code>tmin</code> 的更近的那个子节点先开始，直到抵达叶子节点后遍历其中的所有几何体。只有当在近子节点报告了不相交后远子节点才会被遍历到，如果不存在远子节点（<code>tsplit &gt;= tmx</code>）则直接报告不相交。这种 dfs 实际上使用了一个保存待访问节点信息的栈来实现：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">KdToDo</span> &#123;</span></span><br><span class="line">    <span class="keyword">const</span> KdAccelNode *node;</span><br><span class="line">    Float tMin, tMax;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>近节点会被直接遍历，而后一个需要遍历的节点将被压入栈中</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/10/PBRT-ch04/" title="PBRT 第四章笔记 | Notes for PBRT Chapter 04 - Primitives and Intersection Acceleration" target="_blank" rel="external">https://blog.apassbydreg.work/2021/10/PBRT-ch04/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../../11/UnitySmoothFollowingCamera/" title="Unity 里的平滑跟踪相机 | Smooth Following Camera in Unity"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../UnityLightningFX/" title="Unity 里的闪电特效 | Lightning FX in Unity"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

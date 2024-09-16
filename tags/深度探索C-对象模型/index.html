@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>Tag: 深度探索C++对象模型 | Blog of Martin Z He</title>
+  <meta name="description" content="a minimal blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blog of Martin Z He">
+<meta property="og:url" content="https://blog.apassbydreg.work/tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="a minimal blog">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="Martin Z He">
+<meta name="twitter:card" content="summary">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="..">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../C/" style="font-size: 13.57px;">C++</a> <a href="../CG/" style="font-size: 14px;">CG</a> <a href="../CUDA/" style="font-size: 13px;">CUDA</a> <a href="../FX/" style="font-size: 13px;">FX</a> <a href="../GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../GTC/" style="font-size: 13px;">GTC</a> <a href="../Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../OBR/" style="font-size: 13.29px;">OBR</a> <a href="../OOP/" style="font-size: 13.71px;">OOP</a> <a href="../PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../RTR/" style="font-size: 13px;">RTR</a> <a href="../Unity/" style="font-size: 13.14px;">Unity</a> <a href="../render/" style="font-size: 14px;">render</a> <a href="../visualization/" style="font-size: 13.14px;">visualization</a> <a href="../web/" style="font-size: 13.14px;">web</a> <a href="" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../categories/programming/">programming</a> | <a class="category-link" href="../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../categories/programming/">programming</a> | <a class="category-link" href="../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../categories/programming/">programming</a> | <a class="category-link" href="../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  <main class="main" role="main">
+  <article class="content article article-tags post-type-list" itemscope="">
+    <header class="article-header">
+      <h1 itemprop="name" class="hidden-xs">Tag: 深度探索C++对象模型</h1>
+      <p class="text-muted hidden-xs">Total 8 articles</p>
+      <nav role="navigation" id="nav-main" class="okayNav">
+        <ul>
+          <li><a href="/tags">All</a></li>
+          
+          <li><a href="/tags/visualization/">visualization</a></li>
+          
+          <li><a href="/tags/web/">web</a></li>
+          
+          <li><a href="/tags/CG/">CG</a></li>
+          
+          <li><a href="/tags/render/">render</a></li>
+          
+          <li><a href="/tags/GDC-talks/">GDC talks</a></li>
+          
+          <li><a href="/tags/OOP/">OOP</a></li>
+          
+          <li><a href="/tags/Game-Programming-Patterns/">Game Programming Patterns</a></li>
+          
+          <li><a href="/tags/GPU-Gems-3/">GPU Gems 3</a></li>
+          
+          <li><a href="/tags/GTC/">GTC</a></li>
+          
+          <li><a href="/tags/CUDA/">CUDA</a></li>
+          
+          <li><a href="/tags/GPU-Programming/">GPU Programming</a></li>
+          
+          <li><a href="/tags/C/">C++</a></li>
+          
+          <li><a href="/tags/深度探索C-对象模型/">深度探索C++对象模型</a></li>
+          
+          <li><a href="/tags/OBR/">OBR</a></li>
+          
+          <li><a href="/tags/PBRT/">PBRT</a></li>
+          
+          <li><a href="/tags/RTR/">RTR</a></li>
+          
+          <li><a href="/tags/Unity/">Unity</a></li>
+          
+          <li><a href="/tags/FX/">FX</a></li>
+          
+          <li><a href="/tags/GameLogic/">GameLogic</a></li>
+          
+        </ul>
+      </nav>
+    </header>
+    <!-- /header -->
+    <div class="article-body">
+      <div class="row">
+        
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-11-17T17:31:01.000Z" itemprop="datePublished">2021-11-18</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/11/InsideCppObjectModel-Archive/">《深度探索C++对象模型》笔记合集 | Notes Collection for Inside Cpp Object Model</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-11-17T09:03:18.000Z" itemprop="datePublished">2021-11-17</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/11/InsideCppObjectModel-ch07/">《深度探索C++对象模型》第七章笔记 | Notes for Inside Cpp Object Model Chapter 07</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-11-13T17:33:09.000Z" itemprop="datePublished">2021-11-14</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/11/InsideCppObjectModel-ch06/">《深度探索C++对象模型》第六章笔记 | Notes for Inside Cpp Object Model Chapter 06</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-11-08T09:44:35.000Z" itemprop="datePublished">2021-11-08</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/11/InsideCppObjectModel-ch05/">《深度探索C++对象模型》第五章笔记 | Notes for Inside Cpp Object Model Chapter 05</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-11-01T13:52:35.000Z" itemprop="datePublished">2021-11-01</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/11/InsideCppObjectModel-ch04/">《深度探索C++对象模型》第四章笔记 | Notes for Inside Cpp Object Model Chapter 04</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-10-26T09:27:21.000Z" itemprop="datePublished">2021-10-26</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/10/InsideCppObjectModel-ch03/">《深度探索C++对象模型》第三章笔记 | Notes for Inside Cpp Object Model Chapter 03</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-10-22T05:11:58.000Z" itemprop="datePublished">2021-10-22</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/10/InsideCppObjectModel-ch01/">《深度探索C++对象模型》第一章笔记 | Notes for Inside Cpp Object Model Chapter 01</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+<div class="col-md-6">
+    
+<article class="panel panel-default hover-shadow hover-grow" itemscope itemtype="http://schema.org/BlogPosting">
+  <div class="panel-body">
+     <div class="article-meta">
+       <time datetime="2021-10-22T05:11:58.000Z" itemprop="datePublished">2021-10-22</time>
+     </div>
+     <h3 class="article-title" itemprop="name">
+       <a class="article-link" href="../../2021/10/InsideCppObjectModel-ch02/">《深度探索C++对象模型》第二章笔记 | Notes for Inside Cpp Object Model Chapter 02</a>
+     </h3>
+   </div>
+   
+   <div class="panel-footer">
+     
+      <a href="../OOP/" class="label label-default mb">OOP</a>
+     
+      <a href="../C/" class="label label-default mb">C++</a>
+     
+      <a href="" class="label label-default mb">深度探索C++对象模型</a>
+     
+     
+   </div>
+   
+</article>
+
+
+</div>
+
+      </div>
+    </div>
+  </article>
+   
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../js/plugin.min.js"></script>
+
+
+<script src="../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../js/insight.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

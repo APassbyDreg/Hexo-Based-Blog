@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《深度探索C++对象模型》第六章笔记 | Notes for Inside Cpp Object Model Chapter 06 | Blog of Martin Z He</title>
+  <meta name="description" content="本章中将会讨论在执行中程序员书写的表达式会发生的一些转换，讨论包括临时对象等问题。  6.1 对象的构建和析构  常规对象 常规对象（主要是代码段中声明并使用的对象）的构建发生在对象被声明出来的地方，而析构则发生在区段的退出位置前。如果一个区段有多个退出位置，则会发生在每个退出位置前。在这种情况下，通过将 object 尽可能的声明在使用它的区间附近可以节省不必要的对象构建和解构操作。  全局静态">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《深度探索C++对象模型》第六章笔记 | Notes for Inside Cpp Object Model Chapter 06">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch06/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="本章中将会讨论在执行中程序员书写的表达式会发生的一些转换，讨论包括临时对象等问题。  6.1 对象的构建和析构  常规对象 常规对象（主要是代码段中声明并使用的对象）的构建发生在对象被声明出来的地方，而析构则发生在区段的退出位置前。如果一个区段有多个退出位置，则会发生在每个退出位置前。在这种情况下，通过将 object 尽可能的声明在使用它的区间附近可以节省不必要的对象构建和解构操作。  全局静态">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-11-13T17:33:09.000Z">
+<meta property="article:modified_time" content="2021-11-17T17:39:57.770Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="深度探索C++对象模型">
+<meta name="twitter:card" content="summary">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch06/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#61-%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%9E%84%E5%BB%BA%E5%92%8C%E6%9E%90%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text"> 6.1 对象的构建和析构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%84%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text"> 常规对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%A8%E5%B1%80%E9%9D%99%E6%80%81%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.2.</span> <span class="toc-text"> 全局静态对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B1%80%E9%83%A8%E9%9D%99%E6%80%81%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.3.</span> <span class="toc-text"> 局部静态对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%B9%E8%B1%A1%E6%95%B0%E7%BB%84"><span class="toc-number">1.4.</span> <span class="toc-text"> 对象数组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#default-constructor-%E5%92%8C%E6%95%B0%E7%BB%84"><span class="toc-number">1.5.</span> <span class="toc-text"> Default Constructor 和数组</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#62-new-%E5%92%8C-delete-%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-number">2.</span> <span class="toc-text"> 6.2 new 和 delete 运算符</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%92%88%E5%AF%B9%E5%8D%95%E4%B8%80%E5%AF%B9%E8%B1%A1%E7%9A%84%E8%AF%AD%E4%B9%89"><span class="toc-number">2.1.</span> <span class="toc-text"> 针对单一对象的语义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%92%88%E5%AF%B9%E6%95%B0%E7%BB%84%E7%9A%84%E8%AF%AD%E4%B9%89"><span class="toc-number">2.2.</span> <span class="toc-text"> 针对数组的语义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#placement-operator-new"><span class="toc-number">2.3.</span> <span class="toc-text"> Placement Operator new</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#63-%E4%B8%B4%E6%97%B6%E5%AF%B9%E8%B1%A1"><span class="toc-number">3.</span> <span class="toc-text"> 6.3 临时对象</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-InsideCppObjectModel-ch06" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《深度探索C++对象模型》第六章笔记 | Notes for Inside Cpp Object Model Chapter 06
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-11-13T17:33:09.000Z" itemprop="datePublished">2021-11-14</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/C/" rel="tag">C++</a>, <a class="article-tag-link-link" href="../../../tags/OOP/" rel="tag">OOP</a>, <a class="article-tag-link-link" href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" rel="tag">深度探索C++对象模型</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 2k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 7 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>本章中将会讨论在执行中程序员书写的表达式会发生的一些转换，讨论包括临时对象等问题。</p>
+<h1 id="61-对象的构建和析构"><a class="markdownIt-Anchor" href="#61-对象的构建和析构"></a> 6.1 对象的构建和析构</h1>
+<h2 id="常规对象"><a class="markdownIt-Anchor" href="#常规对象"></a> 常规对象</h2>
+<p>常规对象（主要是代码段中声明并使用的对象）的构建发生在对象被声明出来的地方，而析构则发生在区段的退出位置前。如果一个区段有多个退出位置，则会发生在每个退出位置前。在这种情况下，通过将 object 尽可能的声明在使用它的区间附近可以节省不必要的对象构建和解构操作。</p>
+<h2 id="全局静态对象"><a class="markdownIt-Anchor" href="#全局静态对象"></a> 全局静态对象</h2>
+<p>对于全局静态对象，它们均储存在程序的 data segment 中，C++ 保证会在它们第一次被使用前被构造，并在程序结束前将其析构。一般称这种操作为静态的初始化和内存释放。对于使用表达式初始化的静态变量，一般的解决方案是：</p>
+<ol>
+<li>对所有文件中的全局变量生成 <code>__sti_filename_variablename()</code> 函数用于使用表达式初始化它们</li>
+<li>对所有文件中的全局变量生成 <code>__std_filename_variablename()</code> 函数用于析构它们</li>
+<li>将所有 <code>__sti, __std</code> 函数分别放入两个集合函数中，并在 <code>main</code> 函数的开始和退出位置插入集合函数的调用</li>
+</ol>
+<h2 id="局部静态对象"><a class="markdownIt-Anchor" href="#局部静态对象"></a> 局部静态对象</h2>
+<p>这类对象包括类中的静态对象等。由于它们并不一定会在程序运行中被用到，一般只在它们被使用前才被构建，而其析构则发生在对应的 <code>__std_xxx</code> 函数中。</p>
+<h2 id="对象数组"><a class="markdownIt-Anchor" href="#对象数组"></a> 对象数组</h2>
+<p>对于这类对象的处理取决于这些对象的类型中的构造函数和析构函数的实现情况。如果该类型没有实现任何构造函数和析构函数，那么就直接申请内存即可，并不需要进行额外的操作。对于其他的情况，编译器通常会合成一个用于初始化的函数，形如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">vec_new</span> <span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">void</span> *array,</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">size_t</span> elem_size,</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">int</span> elem_cont,</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">void</span> (*constructor)(<span class="keyword">void</span>*),</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">void</span> (*destructor)(<span class="keyword">void</span>*, <span class="keyword">char</span>)</span></span></span><br><span class="line"><span class="params"><span class="function">)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>特别地，当需要申请的是不记名数组的位置（如使用 <code>new</code> 运算符的情况），则传入的 <code>array</code> 地址就会设为 0 ，由函数在堆上动态分配内存。其它参数则指定了每个元素的大小、元素的数量、需要运行在每个元素上的构造函数以及出现错误时需要运行的析构函数。同样地会有相应的删除对象数组的函数被合成出来：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">vec_delete</span> <span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">void</span> *array,</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">size_t</span> elem_size,</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">int</span> elem_cont,</span></span></span><br><span class="line"><span class="params"><span class="function">		<span class="keyword">void</span> (*destructor)(<span class="keyword">void</span>*, <span class="keyword">char</span>)</span></span></span><br><span class="line"><span class="params"><span class="function">)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>不同编译器实现的方式不完全相同，有的编译器会使用不同的函数处理含 virtual base class 的类和不含的类，有的编译器会额外提供参数，以引导构造函数或析构函数的逻辑。</p>
+<p>另外，当程序员显式的提供了初始化值时，被提供了初值的对象将会被单独初始化，只有剩余的对象会被传入形如上述 <code>vec_new</code> 的函数中。</p>
+<h2 id="default-constructor-和数组"><a class="markdownIt-Anchor" href="#default-constructor-和数组"></a> Default Constructor 和数组</h2>
+<p>在上述使用的 <code>vec_new</code> 函数中的一大问题是，在运行期经由指针调用 constructor （事实上 C++ 并不支持由程序员使用指向构造函数的指针）初始化数组的一大问题是无法访问 default argument values（参数缺省值）。一种解决方案是构造一个只在数组初始化阶段使用的临时构造函数，并在该临时函数中调用使用了缺省值的构造函数。</p>
+<h1 id="62-new-和-delete-运算符"><a class="markdownIt-Anchor" href="#62-new-和-delete-运算符"></a> 6.2 new 和 delete 运算符</h1>
+<h2 id="针对单一对象的语义"><a class="markdownIt-Anchor" href="#针对单一对象的语义"></a> 针对单一对象的语义</h2>
+<p><code>new</code> 运算符实际上由两个步骤组成，包括了：</p>
+<ol>
+<li>通过适当的函数实体配置需要的内存</li>
+<li>为对象设置初始值</li>
+</ol>
+<p><code>delete</code> 运算符也类似，包括了：</p>
+<ol>
+<li>检查是否是空指针</li>
+<li>析构指向的对象</li>
+<li>删除内存（如将内存标记为空闲）</li>
+</ol>
+<p>特别地，语言要求每次 new 的调用均需要返回一个第一无二的指针，而且允许类似 <code>new T[0]</code> 的写法。在这种情况下，编译器一般会返回一个 byte 的区块。</p>
+<h2 id="针对数组的语义"><a class="markdownIt-Anchor" href="#针对数组的语义"></a> 针对数组的语义</h2>
+<p>这一部分和之前的比较类似，当需要使用构造函数初始化对象时，会使用和之前相同的接口 <code>vec_new</code> 申请内存并初始化，区别主要在于传入的目标指针是 <code>NULL</code> 值，由函数申请内存并返回地址。</p>
+<p>一个需要注意的地方在于，当使用一个基类类型的指针传入 <code>delete</code> 函数以删除一个派生类时，如果没有使用 virtual 的析构函数，那么实际调用的是基类的析构函数。这个情况下很可能会造成内存的泄漏。</p>
+<p>另一个对于数组而言的重要特性是，在使用 <code>delete</code> 运算符时，需要确认数组的大小以正确地释放对应的内存。这需要为指针赋予额外的信息。如配置一个额外的 word 或维护一个关联数组来将指针和数组对应。这种方式称为 cookie 。</p>
+<h2 id="placement-operator-new"><a class="markdownIt-Anchor" href="#placement-operator-new"></a> Placement Operator new</h2>
+<p>这是一个预定义的重载的 <code>new</code> 运算符，通过传入一个指向内存中预分配的区块的指针，在需要的情况下将对应数量的规定类型的 constructor 应用于该段内存上。</p>
+<p>这种操作可以将内存管理与内容初始化分离，但需要注意的是：当有重复利用内存块的需要时，应该使用对应的 Placement Operator delete 调用对应的析构函数，这会阻止系统将该块内存标记为空闲。又或者，当使用已经被同类型的object 占用的内存位置指针 <code>new</code> 新的内容时，编译器会自动调用对应的析构函数让出空间。</p>
+<p>和上述针对数组的语义一样，使用已经包含其他类型的内容的内存区块初始化新内容的行为是未定义的。</p>
+<h1 id="63-临时对象"><a class="markdownIt-Anchor" href="#63-临时对象"></a> 6.3 临时对象</h1>
+<p>在运算中，常常会需要使用临时对象储存表达式的值等内容。一段语句是否会产生临时对象取决于编译器实现上的激进程度和该语句的上下文。C++ 标准允许编译器对于临时对象的和使用有完全的自由。</p>
+<p>使用中，临时对象的生命周期的实现方法的不同可能带来灾难性的结果。如果一个临时对象被析构得过早，后续的调用可能会错误地引用到已被删除的地址上。下例展示了一种不合理的临时对象的使用方式：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 原始的代码</span></span><br><span class="line">String s1 = <span class="string">&quot;a&quot;</span>, s2 = <span class="string">&quot;b&quot;</span>;</span><br><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;%s&quot;</span>, s1 + s2);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 合法但不正确的编译器拓展方式</span></span><br><span class="line">String temp1 = String::<span class="keyword">operator</span>+(s1, s2);</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> *temp2 = temp1.<span class="keyword">operator</span> <span class="keyword">const</span> <span class="keyword">char</span>*();</span><br><span class="line">temp1.~<span class="built_in">String</span>(); <span class="comment">// 过早的析构使得上述地址无效化</span></span><br><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;%s&quot;</span>, temp2); <span class="comment">// 使用了无效的地址</span></span><br></pre></td></tr></table></figure>
+<p>因此，C++ 标准规定临时对象的析构必须是对完整表达式（包括了临时对象的最外围的表达式）求值过程中的最后一个步骤。但这无法避免形如下例的错误：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">String s1 = <span class="string">&quot;a&quot;</span>, s2 = <span class="string">&quot;b&quot;</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> *p = s1 + s2; <span class="comment">// 这里也指向了非法的地址</span></span><br></pre></td></tr></table></figure>
+<p>临时对象的生命规则有两个例外，包括了：</p>
+<ol>
+<li>临时对象被用于作为 constructor 的参数初始化另一个对象时，在对象完成初始化前不能被析构（但这也无法避免上述无效指针的问题）</li>
+<li>临时对象被一个 refernce 绑定时也不能在该 refernce 无效前析构对象，这一点是受 C++ 规则保护的</li>
+</ol>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch06/" title="《深度探索C++对象模型》第六章笔记 | Notes for Inside Cpp Object Model Chapter 06" target="_blank" rel="external">https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch06/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../PBRT-ch07/" title="PBRT 第七章笔记（基础篇） | Notes for PBRT Chapter 07 - Sampling and Reconstruction (basis)"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../InsideCppObjectModel-ch05/" title="《深度探索C++对象模型》第五章笔记 | Notes for Inside Cpp Object Model Chapter 05"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

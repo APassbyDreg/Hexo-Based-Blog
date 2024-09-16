@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>PBRT 第一章笔记 | Notes for PBRT Chapter 01 - Introduction | Blog of Martin Z He</title>
+  <meta name="description" content="1.1 Literate Programming 这部分与网页版的 PBRT 展示方式有关，此处跳过  1.2 Photorealistic Rendering and the Ray-Tracing Algorithm 真实感渲染的最终目的是得到足够接近真实世界的照片的渲染结果。大部分真实感渲染的系统均基于光线追踪的算法。光线追踪算法模拟了在场景中与物体交互、弹射的光线的路径，并以此计算摄像头">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PBRT 第一章笔记 | Notes for PBRT Chapter 01 - Introduction">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/10/PBRT-ch01/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="1.1 Literate Programming 这部分与网页版的 PBRT 展示方式有关，此处跳过  1.2 Photorealistic Rendering and the Ray-Tracing Algorithm 真实感渲染的最终目的是得到足够接近真实世界的照片的渲染结果。大部分真实感渲染的系统均基于光线追踪的算法。光线追踪算法模拟了在场景中与物体交互、弹射的光线的路径，并以此计算摄像头">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/10/PBRT-ch01/BaseClasses.png">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Introduction/Class%20Relationships.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Introduction/Surface%20Integration%20Class%20Relationships.svg">
+<meta property="article:published_time" content="2021-10-21T17:42:44.000Z">
+<meta property="article:modified_time" content="2021-11-04T14:21:47.856Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="PBRT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2021/10/PBRT-ch01/BaseClasses.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/10/PBRT-ch01/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#11-literate-programming"><span class="toc-number">1.</span> <span class="toc-text"> 1.1 Literate Programming</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#12-photorealistic-rendering-and-the-ray-tracing-algorithm"><span class="toc-number">2.</span> <span class="toc-text"> 1.2 Photorealistic Rendering and the Ray-Tracing Algorithm</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#121-%E6%91%84%E5%83%8F%E6%9C%BA"><span class="toc-number">2.1.</span> <span class="toc-text"> 1.2.1 摄像机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#122-%E5%85%89%E7%BA%BF-%E7%89%A9%E4%BD%93%E7%9B%B8%E4%BA%A4"><span class="toc-number">2.2.</span> <span class="toc-text"> 1.2.2 光线 - 物体相交</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#123-%E5%85%89%E7%85%A7%E5%88%86%E5%B8%83"><span class="toc-number">2.3.</span> <span class="toc-text"> 1.2.3 光照分布</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#124-%E5%8F%AF%E8%A7%81%E6%80%A7"><span class="toc-number">2.4.</span> <span class="toc-text"> 1.2.4 可见性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#125-%E8%A1%A8%E9%9D%A2%E6%95%A3%E5%B0%84"><span class="toc-number">2.5.</span> <span class="toc-text"> 1.2.5 表面散射</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#126-%E9%97%B4%E6%8E%A5%E5%85%89%E7%85%A7%E4%BC%A0%E8%BE%93"><span class="toc-number">2.6.</span> <span class="toc-text"> 1.2.6 间接光照传输</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#127-%E5%85%89%E7%BA%BF%E4%BC%A0%E8%BE%93"><span class="toc-number">2.7.</span> <span class="toc-text"> 1.2.7 光线传输</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#13-pbrt-system-overview"><span class="toc-number">3.</span> <span class="toc-text"> 1.3 PBRT: System Overview</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#131-%E8%BF%90%E8%A1%8C%E9%98%B6%E6%AE%B5"><span class="toc-number">3.1.</span> <span class="toc-text"> 1.3.1 运行阶段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#132-%E5%9C%BA%E6%99%AF%E8%A1%A8%E7%A4%BA"><span class="toc-number">3.2.</span> <span class="toc-text"> 1.3.2 场景表示</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#133-integrator-%E6%8E%A5%E5%8F%A3%E5%92%8C-samplerintegrator"><span class="toc-number">3.3.</span> <span class="toc-text"> 1.3.3 Integrator 接口和 SamplerIntegrator</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#134-%E4%B8%BB%E6%B8%B2%E6%9F%93%E5%BE%AA%E7%8E%AF"><span class="toc-number">3.4.</span> <span class="toc-text"> 1.3.4 主渲染循环</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#135-whitted-ray-tracing-%E7%9A%84%E7%A7%AF%E5%88%86%E5%99%A8"><span class="toc-number">3.5.</span> <span class="toc-text"> 1.3.5 Whitted Ray Tracing 的积分器</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#14-parallelization-of-pbrt"><span class="toc-number">4.</span> <span class="toc-text"> 1.4 Parallelization of PBRT</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#15-how-to-proceed-through-this-book"><span class="toc-number">5.</span> <span class="toc-text"> 1.5 How to Proceed through This Book</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#16-using-and-understanding-the-code"><span class="toc-number">6.</span> <span class="toc-text"> 1.6 Using and Understanding the Code</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#17-a-brief-history-of-physically-based-rendering"><span class="toc-number">7.</span> <span class="toc-text"> 1.7 A Brief History of Physically Based Rendering</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-PBRT-ch01" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PBRT 第一章笔记 | Notes for PBRT Chapter 01 - Introduction
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-10-21T17:42:44.000Z" itemprop="datePublished">2021-10-22</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/PBRT/" rel="tag">PBRT</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 1.6k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 6 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="11-literate-programming"><a class="markdownIt-Anchor" href="#11-literate-programming"></a> 1.1 Literate Programming</h1>
+<p>这部分与网页版的 PBRT 展示方式有关，此处跳过</p>
+<h1 id="12-photorealistic-rendering-and-the-ray-tracing-algorithm"><a class="markdownIt-Anchor" href="#12-photorealistic-rendering-and-the-ray-tracing-algorithm"></a> 1.2 Photorealistic Rendering and the Ray-Tracing Algorithm</h1>
+<p>真实感渲染的最终目的是得到足够接近真实世界的照片的渲染结果。大部分真实感渲染的系统均基于光线追踪的算法。光线追踪算法模拟了在场景中与物体交互、弹射的光线的路径，并以此计算摄像头最终接收到的颜色，</p>
+<h2 id="121-摄像机"><a class="markdownIt-Anchor" href="#121-摄像机"></a> 1.2.1 摄像机</h2>
+<p>摄像机的主要功能是根据像素在图像上的位置，生成对该位置有贡献的着色光线。</p>
+<h2 id="122-光线-物体相交"><a class="markdownIt-Anchor" href="#122-光线-物体相交"></a> 1.2.2 光线 - 物体相交</h2>
+<p>每当摄像机生成了光线后，渲染器的首要工作是确定该光线是否有击中任何物体，并找出第一个相交的物体和相交的位置。在找到相交的表面后，渲染器将提取交点处的法线、uv、微分等信息以供着色。</p>
+<h2 id="123-光照分布"><a class="markdownIt-Anchor" href="#123-光照分布"></a> 1.2.3 光照分布</h2>
+<p>在获得了着色位置的表面信息后，需要得到场景中的光照分布以计算该处的辐照度。由于在 PBRT 的假设中光照是线性的，对于多个光源可以简单地叠加其影响。</p>
+<h2 id="124-可见性"><a class="markdownIt-Anchor" href="#124-可见性"></a> 1.2.4 可见性</h2>
+<p>可见性补充了光照分布中阴影的缺失。光线追踪渲染器可以简单的使用光线相交技术确定在着色表面是否可被光源影响。</p>
+<h2 id="125-表面散射"><a class="markdownIt-Anchor" href="#125-表面散射"></a> 1.2.5 表面散射</h2>
+<p>在得到了光线的入射、出射方向和表面信息后，PBRT 会计算在此情况下光线在表面作用后出射的结果。PBRT 使用 BRDF / BTDF 表示能量的传递过程。</p>
+<h2 id="126-间接光照传输"><a class="markdownIt-Anchor" href="#126-间接光照传输"></a> 1.2.6 间接光照传输</h2>
+<p>Turner Whitted 最早的有关光线追踪的论文中就强调了其递归的性质，这使得它可以对间接光照进行建模，这给出了著名的光线传输方程：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mi mathvariant="normal">o</mi></msub><mrow><mo fence="true">(</mo><mi mathvariant="normal">p</mi><mo separator="true">,</mo><msub><mi>ω</mi><mi mathvariant="normal">o</mi></msub><mo fence="true">)</mo></mrow><mo>=</mo><msub><mi>L</mi><mi mathvariant="normal">e</mi></msub><mrow><mo fence="true">(</mo><mi mathvariant="normal">p</mi><mo separator="true">,</mo><msub><mi>ω</mi><mi mathvariant="normal">o</mi></msub><mo fence="true">)</mo></mrow><mo>+</mo><msub><mo>∫</mo><msup><mi mathvariant="normal">S</mi><mn>2</mn></msup></msub><mi>f</mi><mrow><mo fence="true">(</mo><mi mathvariant="normal">p</mi><mo separator="true">,</mo><msub><mi>ω</mi><mi mathvariant="normal">o</mi></msub><mo separator="true">,</mo><msub><mi>ω</mi><mi mathvariant="normal">i</mi></msub><mo fence="true">)</mo></mrow><msub><mi>L</mi><mi mathvariant="normal">i</mi></msub><mrow><mo fence="true">(</mo><mi mathvariant="normal">p</mi><mo separator="true">,</mo><msub><mi>ω</mi><mi mathvariant="normal">i</mi></msub><mo fence="true">)</mo></mrow><mrow><mo fence="true">∣</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo fence="true">∣</mo></mrow><mi mathvariant="normal">d</mi><msub><mi>ω</mi><mi mathvariant="normal">i</mi></msub></mrow><annotation encoding="application/x-tex">L_{\mathrm{o}}\left(\mathrm{p}, \omega_{\mathrm{o}}\right)=L_{\mathrm{e}}\left(\mathrm{p}, \omega_{\mathrm{o}}\right)+\int_{\mathrm{S}^{2}} f\left(\mathrm{p}, \omega_{\mathrm{o}}, \omega_{\mathrm{i}}\right) L_{\mathrm{i}}\left(\mathrm{p}, \omega_{\mathrm{i}}\right)\left|\cos \theta_{\mathrm{i}}\right| \mathrm{d} \omega_{\mathrm{i}}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">o</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">(</span><span class="mord"><span class="mord mathrm">p</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">o</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;">)</span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">e</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">(</span><span class="mord"><span class="mord mathrm">p</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">o</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;">)</span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:2.27195em;vertical-align:-0.9119499999999999em;"></span><span class="mop"><span class="mop op-symbol large-op" style="margin-right:0.44445em;position:relative;top:-0.0011249999999999316em;">∫</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.38952999999999993em;"><span style="top:-1.7880500000000001em;margin-left:-0.44445em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">S</span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7463142857142857em;"><span style="top:-2.786em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9119499999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">(</span><span class="mord"><span class="mord mathrm">p</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">o</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31750199999999995em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;">)</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31750199999999995em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">(</span><span class="mord"><span class="mord mathrm">p</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31750199999999995em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;">)</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">∣</span><span class="mop">cos</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31750199999999995em;"><span style="top:-2.5500000000000003em;margin-left:-0.02778em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;">∣</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathrm">d</span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31750199999999995em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">i</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<h2 id="127-光线传输"><a class="markdownIt-Anchor" href="#127-光线传输"></a> 1.2.7 光线传输</h2>
+<p>前文所描述的内容均基于光线在真空中传播的假设，然而事实上光线经常需要经过参与介质。参与介质会产生消光或增强的效果。渲染器需要对这些现象进行建模和模拟，</p>
+<h1 id="13-pbrt-system-overview"><a class="markdownIt-Anchor" href="#13-pbrt-system-overview"></a> 1.3 PBRT: System Overview</h1>
+<p>PBRT 使用标准的面向对象编程技术编写。总共有 10 种关键的基类：</p>
+<center><img src="BaseClasses.png" style="max-height: 35vh; margin: 10px 0;"/></center>
+<h2 id="131-运行阶段"><a class="markdownIt-Anchor" href="#131-运行阶段"></a> 1.3.1 运行阶段</h2>
+<p>PBRT 的运行可以被分为两段：首先它会解析场景描述文件，这个描述文件会产生一个 <code>Scene</code> 实例和一个 <code>Integrator</code> 实例，前者包含了场景的所有信息，后者包含了渲染这个场景的算法。第二个也是主要耗时的阶段是渲染阶段。PBRT 会调用 <code>Integrator::Render()</code> 方法渲染整个场景。</p>
+<h2 id="132-场景表示"><a class="markdownIt-Anchor" href="#132-场景表示"></a> 1.3.2 场景表示</h2>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scene</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Scene Public Methods</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// Scene Public Data</span></span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Light&gt;&gt; lights;</span><br><span class="line">    <span class="comment">// Store infinite light sources separately for cases where we only want</span></span><br><span class="line">    <span class="comment">// to loop over them.</span></span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Light&gt;&gt; infiniteLights;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// Scene Private Data</span></span><br><span class="line">    std::shared_ptr&lt;Primitive&gt; aggregate;</span><br><span class="line">    Bounds3f worldBound;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>每个光源被表示为一个 <code>Light</code> 对象，其中储存了光源的形状和其能量的分布。<code>Scene</code> 类使用智能指针储存这些对象。（特别的，无穷远处的光源被单独储存以备他用）</p>
+<p>场景中的每个几何体被表示为一个 <code>Primitive</code> 对象，其中保存了其性质 <code>Shape</code> 和材质 <code>Material</code> ，<code>Scene</code> 对象中保存的是一种特殊的几何体 <code>aggregate</code> ，它保存了所有的几何体，并实现了与普通 <code>Primitive</code> 一致的接口。</p>
+<h2 id="133-integrator-接口和-samplerintegrator"><a class="markdownIt-Anchor" href="#133-integrator-接口和-samplerintegrator"></a> 1.3.3 <code>Integrator</code> 接口和 <code>SamplerIntegrator</code></h2>
+<p>图片的渲染由继承了 <code>Integrator</code> 接口的实例完成，其中定义了渲染用的 <code>void Render(const Scene &amp;scene)</code> 函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Integrator</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Integrator Interface</span></span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">Integrator</span>();</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Render</span><span class="params">(<span class="keyword">const</span> Scene &amp;scene)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><code>Integrator</code> 的一个子类是 <code>SamplerIntegrator</code> ，它的渲染过程来自于一连串从 <code>Sampler</code> 获取的采样，每个采样均计算了图像上的某一点收到的光量。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SamplerIntegrator</span> :</span> <span class="keyword">public</span> Integrator &#123;</span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">SamplerIntegrator</span>( ... ) : ... &#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Preprocess</span><span class="params">( ... )</span> </span>&#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">Render</span><span class="params">(<span class="keyword">const</span> Scene &amp;scene)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Spectrum <span class="title">Li</span><span class="params">( ... )</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function">Spectrum <span class="title">SpecularReflect</span><span class="params">( ... )</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function">Spectrum <span class="title">SpecularTransmit</span><span class="params">( ... )</span> <span class="keyword">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span>:</span><br><span class="line">    std::shared_ptr&lt;<span class="keyword">const</span> Camera&gt; camera;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    std::shared_ptr&lt;Sampler&gt; sampler;</span><br><span class="line">    <span class="keyword">const</span> Bounds2i pixelBounds;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中的 <code>sampler</code> 成员负责生成用于积分的采样，而 <code>camera</code> 成员则保存了相机相关的信息，其中包含了保存渲染结果的 <code>Film</code> 对象</p>
+<h2 id="134-主渲染循环"><a class="markdownIt-Anchor" href="#134-主渲染循环"></a> 1.3.4 主渲染循环</h2>
+<center><img src="https://pbr-book.org/3ed-2018/Introduction/Class%20Relationships.svg" style="max-height: 25vh; margin: 10px 0;"/></center>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">SamplerIntegrator::Render</span><span class="params">(<span class="keyword">const</span> Scene &amp;scene)</span> </span>&#123;</span><br><span class="line">		<span class="built_in">Preprocess</span>(scene, *sampler);</span><br><span class="line">		<span class="comment">// &lt;&lt;Render image tiles in parallel&gt;&gt; </span></span><br><span class="line">		    <span class="comment">// &lt;&lt;Compute number of tiles, nTiles, to use for parallel rendering&gt;&gt; </span></span><br><span class="line">		    <span class="built_in">ParallelFor2D</span>([&amp;](Point2i tile) &#123;</span><br><span class="line">		       <span class="comment">// &lt;&lt;Render section of image corresponding to tile&gt;&gt; </span></span><br><span class="line">		         <span class="comment">// &lt;&lt;Allocate MemoryArena for tile&gt;&gt; </span></span><br><span class="line">		         <span class="comment">// &lt;&lt;Get sampler instance for tile&gt;&gt; </span></span><br><span class="line">		         <span class="comment">// &lt;&lt;Compute sample bounds for tile&gt;&gt; </span></span><br><span class="line">		         <span class="comment">// &lt;&lt;Get FilmTile for tile&gt;&gt; </span></span><br><span class="line">		         <span class="comment">// &lt;&lt;Loop over pixels in tile to render them&gt;&gt; </span></span><br><span class="line">		         <span class="comment">// &lt;&lt;Merge image tile into Film&gt;&gt; </span></span><br><span class="line">		      &#125;, nTiles);</span><br><span class="line">		<span class="comment">// &lt;&lt;Save final image after rendering&gt;&gt; </span></span><br><span class="line">		camera-&gt;film-&gt;<span class="built_in">WriteImage</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="135-whitted-ray-tracing-的积分器"><a class="markdownIt-Anchor" href="#135-whitted-ray-tracing-的积分器"></a> 1.3.5 Whitted Ray Tracing 的积分器</h2>
+<p>这是一种基础的光线追踪算法使用的积分器，其 <code>Li</code> 函数的运行流程如下</p>
+<center><img src="https://pbr-book.org/3ed-2018/Introduction/Surface%20Integration%20Class%20Relationships.svg" style="max-height: 25vh; margin: 10px 0;"/></center>
+<h1 id="14-parallelization-of-pbrt"><a class="markdownIt-Anchor" href="#14-parallelization-of-pbrt"></a> 1.4 Parallelization of PBRT</h1>
+<p>本章节描述了 PBRT 中并行化的必要性、并行化的风险以及并行化中需要注意的问题。其中线程不安全的内容包括：</p>
+<ul>
+<li>大部分的基础类型：如 <code>Point3f, Vector3f, Transform</code> 等使用频次过高的类型，对这些类型实现线程安全会导致极大的性能损失</li>
+<li>工具类：如 <code>MemoryArena, RNG, Sampler</code> 等类型一般在每个线程中单独生成并使用，不做跨线程通信</li>
+<li>预处理函数：由于 PBRT 的 Parsing 阶段一般是串行执行的，这类在初始化时调用的预处理函数一般也不是线程安全的</li>
+</ul>
+<h1 id="15-how-to-proceed-through-this-book"><a class="markdownIt-Anchor" href="#15-how-to-proceed-through-this-book"></a> 1.5 How to Proceed through This Book</h1>
+<p>教你怎么用这本书的一节，此处略</p>
+<h1 id="16-using-and-understanding-the-code"><a class="markdownIt-Anchor" href="#16-using-and-understanding-the-code"></a> 1.6 Using and Understanding the Code</h1>
+<p>教你怎么用这本书的代码的一节，此处略</p>
+<h1 id="17-a-brief-history-of-physically-based-rendering"><a class="markdownIt-Anchor" href="#17-a-brief-history-of-physically-based-rendering"></a> 1.7 A Brief History of Physically Based Rendering</h1>
+<p>本章的翻译链接：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/kanition/pbrtbook">GitHub - kanition/pbrtbook: pbrt 中文整合翻译 基于物理的渲染：从理论到实现 Physically Based Rendering: From Theory To Implementation</a></p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/10/PBRT-ch01/" title="PBRT 第一章笔记 | Notes for PBRT Chapter 01 - Introduction" target="_blank" rel="external">https://blog.apassbydreg.work/2021/10/PBRT-ch01/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../PBRT-ch02/" title="PBRT 第二章笔记（基础篇） | Notes for PBRT Chapter 02 - Geometry and Transforms (basis)"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../OptixBasedRendererFramework/" title="基于 Optix 的渲染器框架 | Optix Based Renderer Framework"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

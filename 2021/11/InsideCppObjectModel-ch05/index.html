@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《深度探索C++对象模型》第五章笔记 | Notes for Inside Cpp Object Model Chapter 05 | Blog of Martin Z He</title>
+  <meta name="description" content="5.1 无继承情况下的对象构造  Plain Old Data (POD)  A Plain Old Data Structure in C++ is an aggregate class that contains only PODS as members, has no user-defined destructor, no user-defined copy assignment oper">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《深度探索C++对象模型》第五章笔记 | Notes for Inside Cpp Object Model Chapter 05">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch05/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="5.1 无继承情况下的对象构造  Plain Old Data (POD)  A Plain Old Data Structure in C++ is an aggregate class that contains only PODS as members, has no user-defined destructor, no user-defined copy assignment oper">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-11-08T09:44:35.000Z">
+<meta property="article:modified_time" content="2021-11-08T09:47:04.451Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="深度探索C++对象模型">
+<meta name="twitter:card" content="summary">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch05/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#51-%E6%97%A0%E7%BB%A7%E6%89%BF%E6%83%85%E5%86%B5%E4%B8%8B%E7%9A%84%E5%AF%B9%E8%B1%A1%E6%9E%84%E9%80%A0"><span class="toc-number">1.</span> <span class="toc-text"> 5.1 无继承情况下的对象构造</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#plain-old-data-pod"><span class="toc-number">1.1.</span> <span class="toc-text"> Plain Old Data (POD)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#abstract-data-type-adt"><span class="toc-number">1.2.</span> <span class="toc-text"> Abstract Data Type (ADT)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E7%BB%A7%E6%89%BF%E5%81%9A%E5%87%86%E5%A4%87"><span class="toc-number">1.3.</span> <span class="toc-text"> 为继承做准备</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#52-%E7%BB%A7%E6%89%BF%E4%BD%93%E7%B3%BB%E4%B8%8B%E7%9A%84%E5%AF%B9%E8%B1%A1%E6%9E%84%E9%80%A0"><span class="toc-number">2.</span> <span class="toc-text"> 5.2 继承体系下的对象构造</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E7%BB%A7%E6%89%BF"><span class="toc-number">2.1.</span> <span class="toc-text"> 虚拟继承</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#vptr-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">2.2.</span> <span class="toc-text"> vptr 初始化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#53-%E5%AF%B9%E8%B1%A1%E5%A4%8D%E5%88%B6%E8%AF%AD%E4%B9%89%E5%AD%A6"><span class="toc-number">3.</span> <span class="toc-text"> 5.3 对象复制语义学</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#54-%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%95%88%E7%8E%87"><span class="toc-number">4.</span> <span class="toc-text"> 5.4 对象的效率</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#55-%E8%A7%A3%E6%9E%84%E8%AF%AD%E4%B9%89%E5%AD%A6"><span class="toc-number">5.</span> <span class="toc-text"> 5.5 解构语义学</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-InsideCppObjectModel-ch05" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《深度探索C++对象模型》第五章笔记 | Notes for Inside Cpp Object Model Chapter 05
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-11-08T09:44:35.000Z" itemprop="datePublished">2021-11-08</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/C/" rel="tag">C++</a>, <a class="article-tag-link-link" href="../../../tags/OOP/" rel="tag">OOP</a>, <a class="article-tag-link-link" href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" rel="tag">深度探索C++对象模型</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 1.4k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 5 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="51-无继承情况下的对象构造"><a class="markdownIt-Anchor" href="#51-无继承情况下的对象构造"></a> 5.1 无继承情况下的对象构造</h1>
+<h2 id="plain-old-data-pod"><a class="markdownIt-Anchor" href="#plain-old-data-pod"></a> Plain Old Data (POD)</h2>
+<blockquote>
+<p>A Plain Old Data Structure in C++ is an aggregate class that contains only PODS as members, has no user-defined destructor, no user-defined copy assignment operator, and no nonstatic members of pointer-to-member type.</p>
+</blockquote>
+<p>这类数据结构是 C 兼容的，表现和 C 程序一致。</p>
+<h2 id="abstract-data-type-adt"><a class="markdownIt-Anchor" href="#abstract-data-type-adt"></a> Abstract Data Type (ADT)</h2>
+<p>加入 ADT 结构之后，程序会在特定情况下调用给定的构造、析构函数。虽然这带来了微小的性能损失，但在工程上带来的好处常常更大。</p>
+<h2 id="为继承做准备"><a class="markdownIt-Anchor" href="#为继承做准备"></a> 为继承做准备</h2>
+<p>在加入虚函数后，编译器必须引入虚表，并提供一系列底层的对 vptr 的设置和转换操作，包括：</p>
+<ul>
+<li>向构造函数中添加初始化 vptr 的代码</li>
+<li>合成有意义的 copy construcor、copy assignment constructor</li>
+</ul>
+<p>这些内容的引入让对象不再满足从前的 bitwise 语义，因此在函数传入、返回、拷贝赋值的过程中均会引入额外的消耗。一般而言，当设计中有大量函数需要以传值的方式返回一个 local class object ，那么提供一个 copy constructor 就比较合理。这样的 copy constructor 可以触发 NRV 优化，避免额外对象的构建。</p>
+<h1 id="52-继承体系下的对象构造"><a class="markdownIt-Anchor" href="#52-继承体系下的对象构造"></a> 5.2 继承体系下的对象构造</h1>
+<p>在一个 class object 被定义时，其 constructor 中可能含有大量的隐藏码，可能包括了：</p>
+<ul>
+<li>所有 virtual base class constructors 必须被按声明和层次顺序调用
+<ul>
+<li>如果在 member initialization list 中，则使用明确指定的参数初始化 base class</li>
+<li>如果不在 member initialization list 中，则寻找 default constructor 初始化 base class</li>
+<li>每一个 subobject 的偏移量需要在执行期可存取</li>
+</ul>
+</li>
+<li>所有 base class constructor 按声明顺序调用
+<ul>
+<li>如果在 member initialization list 中，则使用明确指定的参数初始化 base class</li>
+<li>如果不在 member initialization list 中，则寻找 default constructor 初始化 base class</li>
+<li>在 base class 是</li>
+</ul>
+</li>
+<li>vptr 的初始化</li>
+<li>记录在 member initialization list 中的变量初始化</li>
+<li>含有 default constructor 且未在 member initialization list 中的变量初始化</li>
+</ul>
+<h2 id="虚拟继承"><a class="markdownIt-Anchor" href="#虚拟继承"></a> 虚拟继承</h2>
+<p>当引入虚拟继承后，constructor 的扩充就不同于传统的只需要考虑 data members 和 vptr 的初始化问题了。在串式的 constructor 调用过程中 virtual base class 的 constructor 可能被重复调用，这要求编译器只在当一个完整的 class object 被构建时调用 virtual base class 的 constructor ，而在处理 subobjects 时压抑它们的调用。</p>
+<h2 id="vptr-初始化"><a class="markdownIt-Anchor" href="#vptr-初始化"></a> vptr 初始化</h2>
+<p>C++ 语言规则要求，在一个 class object 的 constructor（包括其 subobject 的 constructor ）中，经由构造中的对象调用 virtual function ，其函数实体应该是在当前 constructor 属于的 class 中定义的那个。这要求虚拟机制必须知道自己是否处于一个 constructor 中。</p>
+<p>为了控制决定对应位置的 virtual functions 的名单，编译系统需要通过控制 vptr 的初始化。事实上这一操作是在 base class constructor 调用之后、程序员代码或 member initialization list 对应的代码之前完成的。</p>
+<h1 id="53-对象复制语义学"><a class="markdownIt-Anchor" href="#53-对象复制语义学"></a> 5.3 对象复制语义学</h1>
+<p>当使用一个 class object 指定给另一个 class object 时，有三种可能的选择：</p>
+<ol>
+<li>不做任何事，使用默认拷贝行为</li>
+<li>提供一个 copy assignment operator</li>
+<li>明确拒绝这个行为（通过提供一个 private 的 copy assignment operator）</li>
+</ol>
+<p>在以下的情况下，一个 object 不符合 bitwise semantics ，而需要用户提供明确的 copy assignment operator ：</p>
+<ol>
+<li>其中含有一个具有用户定义的 copy assignment operator 的 member object</li>
+<li>其 base class 中存在 copy assignment operator 定义</li>
+<li>其声明了任何 virtual function（vptr 总是不能直接拷贝的）</li>
+<li>其继承自一个 virtual base class</li>
+</ol>
+<p>但这种用户声明的内容总比默认情况要慢，还会出现因为不像 constructor 拥有 members initialization list 从而无法压抑 virtual base class 的 copy operators 的调用的情况。</p>
+<p>解决这一情况的方法还是，如之前所说，不要允许 virtual base class 的拷贝操作、甚至不要在其中存放任何数据。</p>
+<h1 id="54-对象的效率"><a class="markdownIt-Anchor" href="#54-对象的效率"></a> 5.4 对象的效率</h1>
+<p>在对象符合 bitwise copy semantics 的时候效率最高，无论是 POD 、单继承或者是多继承效率均没有多少差别。为数不多的差距在于使用用户代码初始化成员变量和使用 members initialization list 初始化成员变量所带来的细微区别。</p>
+<p>一旦引入 virtual function 或 virtual base class ，由于程序需要合成新的处理虚继承、虚函数的 copy assignment / constructor 内容，运行效率将大大降低。其中又以虚拟继承的情况尤甚。</p>
+<h1 id="55-解构语义学"><a class="markdownIt-Anchor" href="#55-解构语义学"></a> 5.5 解构语义学</h1>
+<p>如果类本身没有定义 destructor ，那么只在其内带的、或基类中的成员变量拥有destructor 的时候，编译器才会合成一个destructor ——即使其中使用了虚函数或者虚拟派生。</p>
+<p>一个由程序员定义的 destructor 被扩展的方式类似 constructor 被扩展的方式，但是会反过来，其顺序如下：</p>
+<ol>
+<li>如果 object 内存在一个 vptr，会首先重设相关的 vtbl</li>
+<li>destructor 的函数本身被执行</li>
+<li>如果其任何 member class object（不含基类中的）有 destructor ，它们会被执行</li>
+<li>如果有任何上一层的 nonvirtual base class 拥有 destructor ，它们会被执行</li>
+<li>如果有任何 virtual base class 拥有 destructor ，它们会被执行</li>
+</ol>
+<p>一个 object 的生命周期结束于 destructor 被执行的时候。在执行期间，它会依次变成它的各个层级的基类被最终消亡。</p>
+<blockquote>
+<p>这里的顺序可能有些问题，第一步实际上可能应该放在第三步后执行</p>
+</blockquote>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch05/" title="《深度探索C++对象模型》第五章笔记 | Notes for Inside Cpp Object Model Chapter 05" target="_blank" rel="external">https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch05/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../InsideCppObjectModel-ch06/" title="《深度探索C++对象模型》第六章笔记 | Notes for Inside Cpp Object Model Chapter 06"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../PBRT-ch06/" title="PBRT 第六章笔记（基础篇） | Notes for PBRT Chapter 06 - Camera Models (basis)"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

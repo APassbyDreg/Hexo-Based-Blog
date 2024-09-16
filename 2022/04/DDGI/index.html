@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>Dynamic Diffuse Global Illumination - GDC 2018 | Blog of Martin Z He</title>
+  <meta name="description" content="本文源自 GDC 2018 中 NVIDIA 的分享：https:&#x2F;&#x2F;morgan3d.github.io&#x2F;articles&#x2F;2019-04-01-ddgi&#x2F;index.html  Glossy GI  环境贴图 Glossy GI 贡献了光滑表面上可辨识的反射，从 19 世纪 70 年代起，其就被使用环境贴图来近似。随着时间的演进，它的核心算法也被视差扰动和可变表面粗糙度的方法而改进。这一类算法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dynamic Diffuse Global Illumination - GDC 2018">
+<meta property="og:url" content="https://blog.apassbydreg.work/2022/04/DDGI/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="本文源自 GDC 2018 中 NVIDIA 的分享：https:&#x2F;&#x2F;morgan3d.github.io&#x2F;articles&#x2F;2019-04-01-ddgi&#x2F;index.html  Glossy GI  环境贴图 Glossy GI 贡献了光滑表面上可辨识的反射，从 19 世纪 70 年代起，其就被使用环境贴图来近似。随着时间的演进，它的核心算法也被视差扰动和可变表面粗糙度的方法而改进。这一类算法">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/04/DDGI/Untitled.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/04/DDGI/Untitled%201.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/04/DDGI/Untitled%202.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/04/DDGI/Untitled%203.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/04/DDGI/Untitled%204.png">
+<meta property="article:published_time" content="2022-04-16T04:52:53.000Z">
+<meta property="article:modified_time" content="2022-04-16T05:07:39.850Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="GDC talks">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2022/04/DDGI/Untitled.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2022/04/DDGI/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#glossy-gi"><span class="toc-number">1.</span> <span class="toc-text"> Glossy GI</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E8%B4%B4%E5%9B%BE"><span class="toc-number">1.1.</span> <span class="toc-text"> 环境贴图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA"><span class="toc-number">1.2.</span> <span class="toc-text"> 光线追踪</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%97%E6%B3%95"><span class="toc-number">1.3.</span> <span class="toc-text"> 算法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%97%A7-diffuse-gi"><span class="toc-number">2.</span> <span class="toc-text"> 旧 Diffuse GI</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E7%9A%84-irradiance-%E6%8E%A2%E9%92%88"><span class="toc-number">2.1.</span> <span class="toc-text"> 经典的 Irradiance 探针</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BC%8F%E5%85%89"><span class="toc-number">2.2.</span> <span class="toc-text"> 漏光</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ddgi"><span class="toc-number">3.</span> <span class="toc-text"> DDGI</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%87%E7%BA%A7%E6%8E%A2%E9%92%88"><span class="toc-number">3.1.</span> <span class="toc-text"> 升级探针</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A2%E9%92%88%E6%94%BE%E7%BD%AE"><span class="toc-number">3.2.</span> <span class="toc-text"> 探针放置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B1%82%E7%BA%A7%E7%BB%93%E6%9E%84"><span class="toc-number">3.3.</span> <span class="toc-text"> 层级结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.4.</span> <span class="toc-text"> 数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%97%E6%B3%95-2"><span class="toc-number">3.5.</span> <span class="toc-text"> 算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA-2"><span class="toc-number">3.5.1.</span> <span class="toc-text"> 光线追踪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0%E6%8E%A2%E9%92%88"><span class="toc-number">3.5.2.</span> <span class="toc-text"> 更新探针</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%87%E6%A0%B7%E6%8E%A2%E9%92%88"><span class="toc-number">3.5.3.</span> <span class="toc-text"> 采样探针</span></a></li></ol></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-DDGI" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Dynamic Diffuse Global Illumination - GDC 2018
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2022-04-16T04:52:53.000Z" itemprop="datePublished">2022-04-16</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/GDC-talks/" rel="tag">GDC talks</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 2.8k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 9 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>本文源自 GDC 2018 中 NVIDIA 的分享：<a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/index.html">https://morgan3d.github.io/articles/2019-04-01-ddgi/index.html</a></p>
+<h1 id="glossy-gi"><a class="markdownIt-Anchor" href="#glossy-gi"></a> Glossy GI</h1>
+<h2 id="环境贴图"><a class="markdownIt-Anchor" href="#环境贴图"></a> 环境贴图</h2>
+<p>Glossy GI 贡献了光滑表面上可辨识的反射，从 19 世纪 70 年代起，其就被使用环境贴图来近似。随着时间的演进，它的核心算法也被视差扰动和可变表面粗糙度的方法而改进。这一类算法一般被称为环境映射、环境探针、辐照度探针、光照探针等。</p>
+<p>大部分在实时渲染中使用的光照探针都是预计算的，这使得动态的物体和光源都无法影响反射光照。虽然在很多游戏中使用了各自 tricks 来提供高效的全局光照，但它们都无法实现真正通用的实时 Glossy GI 。</p>
+<h2 id="光线追踪"><a class="markdownIt-Anchor" href="#光线追踪"></a> 光线追踪</h2>
+<p>最早出现于 CryEngine 3 的屏幕空间反射技术在近年来被广泛用于近距离物体的反射计算。<a target="_blank" rel="noopener" href="https://jcgt.org/published/0003/04/04/">这篇文章</a>详细分析了这一算法。进一步地，为了处理不在屏幕空间内的表面的反射，需要进行真实几何的光线追踪。当前的许多游戏都使用了上述的一种或多种算法。</p>
+<h2 id="算法"><a class="markdownIt-Anchor" href="#算法"></a> 算法</h2>
+<p>在完美平滑表面的 Glossy GI 的实现相当直观，对于镜面而言光线击中的着色值就是对应的 GI 值。而对于模糊的粗糙反射则存在两种方法：要么使用随机光线采样，并模糊采样的结果；要么直接采样完美反射方向，并模糊其反射内容。</p>
+<center style="margin-bottom: 10px"><img src="Untitled.png" style="max-height: 30vh; margin: 10px 0"/></center>
+<p>上图展示了这个流程：</p>
+<ol>
+<li>在只有一半的垂直分辨率的 GBuffer 上进行光线追踪，每个像素追踪一个完美反射方向，然后使用常用的延迟渲染方法对光线追踪的结果位置进行着色，次级 Glossy GI 也可以使用类似的方法完成</li>
+<li>使用 MIP map 模糊镜面反射结果的 buffer ，模糊时会使用特殊的双向滤波方法以保证其不会采样到无高光反射的黑色区域</li>
+<li>使用主表面的粗糙度和出入射光线的距离计算 MIP map 的层级，进而采样上述贴图</li>
+</ol>
+<p>这种方法相较于进行随机光线采样可以较为简单地减少高光走样，但并不那么物理准确。事实上，上述问题是 Glossy GI 中会遇到的主要问题。TAA 对此而言是一把双刃剑，它虽然可以减少走样，但需要十分复杂的对于反射物体和反射表面的 motion vector 处理。一种处理方法是禁用视差和法线映射，并在图像上使用 FXAA 。这相当于在反射 buffer 上使用 TAA 。</p>
+<p>在较近的物体上使用 SSR ，并对非常远的物体使用环境探针可以通过缩短光线长度以减少约一半的消耗。使用棋盘渲染方法而非减半垂直采样数可以提升图像质量，但也有着出现横向走样的风险。减半分辨率渲染和 DLSS 也可以被整合入整个流程中以减少走样。</p>
+<h1 id="旧-diffuse-gi"><a class="markdownIt-Anchor" href="#旧-diffuse-gi"></a> 旧 Diffuse GI</h1>
+<p>动态的高光 GI 已经在数年前被基本解决了，剩余的问题包括更高效地解决屏幕外的物体，以及减少噪声和走样。但从来没有一种稳定、动态且高效的方法能够解决 Diffuse GI 的问题。下面列举了一些可以在特定情况下提供优秀结果的方法：</p>
+<ul>
+<li>Light maps <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-quake97">Quake97</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-mitchell06">Mitchell06</a></li>
+<li>Irradiance probes/voxels <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-greger98">Greger98</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-tatarchuk05">Tatarchuk05</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-ramamoorthi11">Ramamoorthi11</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-gilabert12">Gilabert12</a></li>
+<li>Virtual point lights <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-keller97">Keller97</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-kaplanyan10">Kaplanyan10</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-ding14">Ding14</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-xu16">Xu16</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-sassone19">Sassone19</a> <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-white19">White19</a></li>
+<li>Reflective shadow maps <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-dachsbacher05">Dachsbacher05</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-kaplanyan10">Kaplanyan10</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-ding14">Ding14</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-malmros17">Malmros17</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-xu16">Xu16</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-white19">White19</a></li>
+<li>Light propagation volumes <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-kaplanyan09">Kaplanyan09</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-kaplanyan10">Kaplanyan10</a></li>
+<li>Sparse voxel cone tracing <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-crassin11">Crassin11</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-mclaren16">McLaren16</a></li>
+<li>Denoised ray tracing <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-mara17">Mara17</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-schied17">Schied17</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-metro19">Metro19</a><a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-archard19">Archard19</a></li>
+</ul>
+<p>预计算的 Light maps 是 DX11 级别游戏的主流解决方案，并被大多数主流游戏引擎所支持。<a target="_blank" rel="noopener" href="https://www.siliconstudio.co.jp/">Enlighten</a> 中间件可以使用简化的模型在运行时动态地更新光照贴图和探针，它已被用于非常多的游戏，并为 DDGI 提供了灵感来源。</p>
+<p>除了上述列举的方法以外，RTR4 中还列举了一个完整的 survey 以记录所有实时全局光照方法。</p>
+<p>为了更好地理解 DDGI 首先需要理解传统的 irradiance 探针方法，因为这是 DDGI 主要加速并改进的全局光照方法。这种方法的限制也可以很好地代表上述方法的限制。</p>
+<h2 id="经典的-irradiance-探针"><a class="markdownIt-Anchor" href="#经典的-irradiance-探针"></a> 经典的 Irradiance 探针</h2>
+<p>源于 1998 年 <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-greger98">Greger98</a> 的在稀疏空间储存 irradiance 场的想法发展至今，已经被许多引擎所采用。引擎会使用细小的探针测量并储存空间中的 Diffuse GI 信息，这种使用 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>cos</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\cos</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mop">cos</span></span></span></span> 加权积分入射光线的 radiance 得到的在数学上即为对应空间位置的 irradiance 。每个探针都表示了一整个单位球面的方向，它们可以使用任意的球面映射方式储存。这些值通常会使用离线方法被预计算出来，部分引擎会在运行时通过在非常低 LOD 的场景中采样光线来更新这个值。</p>
+<p>irradiance 光照探针的质量可以非常高，对于在探针附近的表面通常可以得到非常完美的表现，但它也拥有包括离线烘焙耗时大且打断工作流、难以计算实时探针和在探针密度不足的区域漏光的问题。</p>
+<h2 id="漏光"><a class="markdownIt-Anchor" href="#漏光"></a> 漏光</h2>
+<p>当光照由于某些场景几何而发生大幅变化时，irradiance 探针会因为采样不足而产生漏光的问题。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%201.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>上图（来自 SIGGRAPH talk <a target="_blank" rel="noopener" href="https://morgan3d.github.io/articles/2019-04-01-ddgi/overview.html#citation-hooker16">Hooker16</a> ）屋外的亮处向屋内贡献了不正确的阳光光照，而门的阴影则贡献了不正确的暗部。当前最有效的解决方法是让艺术家人工地放置遮挡几何体以区分内外侧，上图的来源详细地讨论了这个问题，但这一方法也无法解决动态光照的问题。</p>
+<p>这些问题在所有的实时 Diffuse GI 中都有出现，是所有算法中共同潜藏的缺陷。</p>
+<h1 id="ddgi"><a class="markdownIt-Anchor" href="#ddgi"></a> DDGI</h1>
+<h2 id="升级探针"><a class="markdownIt-Anchor" href="#升级探针"></a> 升级探针</h2>
+<p>传统的 irradiance 探针由于其高效率、低噪声、适用广、无参数等特点广泛应用于各自引擎中。正如上文所描述的，这类算法的主要缺点就在于其漏光和难以动态更新的问题。DDGI 升级了传统的光照探针以解决此问题。</p>
+<ul>
+<li>对于漏光问题，将可视性信息储存在探针中</li>
+<li>对于动态问题，使用异步的 GPU 光线追踪以计算低分辨率的探针，并使用一个内存一致的收集混合策略以分摊消耗，避免闪烁</li>
+</ul>
+<h2 id="探针放置"><a class="markdownIt-Anchor" href="#探针放置"></a> 探针放置</h2>
+<p>下图展示了 DDGI 的探针放置情况。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%202.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>在制作中，可以首先从一个均匀网格开始，这一般就可以获得一个可用的结果。再针对高频的细节位置增加探针数量，或者减少部分位置的探针以提高运行效率。</p>
+<p>另一方面，由于这种探针的整体效果随着放置位置的影响不大，它可以直接支持动态场景，有效地减少了流程中对光照和几何体的调整对最终效果的影响。除此之外，任意的光照探针都可以在场景网格中任意移动，从而提供精细的调整。</p>
+<h2 id="层级结构"><a class="markdownIt-Anchor" href="#层级结构"></a> 层级结构</h2>
+<p>光照探针的放置和更新策略可以使用层次结构有效地进行管理，对于远处的探针，在减小更新的频率的同时还可以通过禁用可视性检测以进一步加快运行效率。</p>
+<h2 id="数据结构"><a class="markdownIt-Anchor" href="#数据结构"></a> 数据结构</h2>
+<p>下图展示了在上述场景的探针中单一层次的材质内存储存方式，上一排展示了使用 <code>R11G11B10F</code> 方式储存的 irradiance 信息，下图展示了二维的 <code>RG16F</code> 的可见性信息。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%203.png" style="max-height: 35vh; margin: 10px 0"/></center>
+<p>在这一场景中使用了 <code>32*32*4</code> 个探针，可以观察到每个材质包含了四个横向排列的矩形，这正对应了四个不同的纵向探针层级。黑色的部分表示了探针进入了墙壁中。</p>
+<p>在每个大型矩形中有大量的小矩形以表示探针携带的值。球状的方向信息会被投影到八面体上，接着展开为一个 <code>6*6</code> 的 irradiance 矩形和一个 <code>16*16</code> 的可见性（储存了深度信息）矩形。</p>
+<p>在这种储存方式下，每一层中的 irradiance 信息需要占用 590 KB的空间，可视性信息则占用了约 4MB 的空间。</p>
+<h2 id="算法-2"><a class="markdownIt-Anchor" href="#算法-2"></a> 算法</h2>
+<p>DDGI 和传统的 Glossy GI 算法类似，它主要包含了三个步骤：光线追踪、更新探针以及对可视位置进行着色。</p>
+<center style="margin-bottom: 10px"><img src="Untitled%204.png" style="max-height: 35vh; margin: 10px 0"/></center>
+<h3 id="光线追踪-2"><a class="markdownIt-Anchor" href="#光线追踪-2"></a> 光线追踪</h3>
+<p>这一步中会为每个探针生成约 100 - 300 根光线，生成对应的 GBuffer ，并使用标准的 deferred 方式对这些光线进行着色。</p>
+<p>由于 Glossy GI 只使用了一半的屏幕高度，光线追踪的信息可以被放入其屏幕缓冲区的下半部分以在单 Pass 内完成两部分的着色。由于着色时使用的 Diffuse GI 信息是来自上一帧的内容，DDGI 通过增加反射数量以让其结果可以在场景变化后的几帧之内快速收敛到新的值上。</p>
+<h3 id="更新探针"><a class="markdownIt-Anchor" href="#更新探针"></a> 更新探针</h3>
+<p>使用新的着色数据更新探针。这一步会遍历所有探针的纹素，对每一个纹素收集所有的光线相交位置并利用时序和可视性信息混合新旧数据，每一次混合中旧有的值可以占到 90% ~ 99.5% 的比例。</p>
+<h3 id="采样探针"><a class="markdownIt-Anchor" href="#采样探针"></a> 采样探针</h3>
+<p>这一步的效率极高，并且可以轻松结合入 forward 和 deferred 管线中，甚至可以应用于体积渲染和 Glossy 光线渲染中。这一步中的主要性能开销是 16 次纹理查询，但由于数据结构封装的高效性它们可以拥有很高的缓存命中率。</p>
+<p>DDGI 主要的性能开销在前两部分，但它们可以独立于帧率和屏幕分辨率更新，这使得其开销可以简单地分摊到应用整体上。在 RTX2080 上，这种独立性会带来约 100ms 的间接光照更新延迟，这在大部分情况下都是难以察觉的；而对于低端的显卡，间接光照会存在更多的延迟，但对于静态场景而言其质量仍然十分突出。</p>
+<p>在结合了 Glossy GI 后，一个使用 DDGI 技术的高端 GPU 可以得到和离线渲染相近的视觉效果，并且对于未来的 GPU 在层次结构、探针密度上均有有效的可拓展性。而对于低端的平台则可以通过禁用动态更新以获得和烘焙光照无异的优秀效果。</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2022/04/DDGI/" title="Dynamic Diffuse Global Illumination - GDC 2018" target="_blank" rel="external">https://blog.apassbydreg.work/2022/04/DDGI/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../GPP-ch04/" title="《游戏编程模式》第四章笔记 | Notes for Game Programming Patterns Chapter 04"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../GPUGems3-ch13/" title="《GPU Gem3》第十三章笔记 - 使用后处理的体积光散射 | Notes for GPU Gems 3 Chapter 13 - Volumetric Light Scattering as a Post-Process"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

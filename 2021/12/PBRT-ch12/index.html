@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>PBRT 第十二章笔记 | Notes for PBRT Chapter 12 - Light Sources | Blog of Martin Z He</title>
+  <meta name="description" content="若要使场景中的物体可见，场景中必定需要有向外辐射光子的光源。本节将首先讨论不同的发光物理过程，并引入基础的 Light 抽象类。紧接着讲解几种常用的光源类型。  12.1 Light Emission 所有非处在绝对零度的物体中均有运动的原子。而根据麦克斯韦定理，运动的电荷会向四周辐射电磁波。大部分室温下的物体辐射的波长均在红外波段，而辐射可见光波段的物体则需要具有更高的温度。当前市面上常见的物理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PBRT 第十二章笔记 | Notes for PBRT Chapter 12 - Light Sources">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/12/PBRT-ch12/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="若要使场景中的物体可见，场景中必定需要有向外辐射光子的光源。本节将首先讨论不同的发光物理过程，并引入基础的 Light 抽象类。紧接着讲解几种常用的光源类型。  12.1 Light Emission 所有非处在绝对零度的物体中均有运动的原子。而根据麦克斯韦定理，运动的电荷会向四周辐射电磁波。大部分室温下的物体辐射的波长均在红外波段，而辐射可见光波段的物体则需要具有更高的温度。当前市面上常见的物理">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/blackbody-L-vs-lambda.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/cie-a.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/cie-d6500.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/cie-f4-f9.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/Light%20Sample%20Li.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/dragon-point.png">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/dragon-spot.png">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/Spotlight%20angles.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/dragon-projection.png">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/Projection%20light%20setting.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/dragon-gonio.png">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/DistantLight%20shadow%20ray.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/DistantLight%20approx%20power.svg">
+<meta property="og:image" content="https://pbr-book.org/3ed-2018/Light_Sources/area-scene-wide.png">
+<meta property="article:published_time" content="2021-12-07T11:54:28.000Z">
+<meta property="article:modified_time" content="2021-12-07T11:59:55.957Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="PBRT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pbr-book.org/3ed-2018/Light_Sources/blackbody-L-vs-lambda.svg">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/12/PBRT-ch12/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#121-light-emission"><span class="toc-number">1.</span> <span class="toc-text"> 12.1 Light Emission</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1211-%E9%BB%91%E4%BD%93%E8%BE%90%E5%B0%84"><span class="toc-number">1.1.</span> <span class="toc-text"> 12.1.1 黑体辐射</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1212-standard-illuminants"><span class="toc-number">1.2.</span> <span class="toc-text"> 12.1.2 Standard Illuminants</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#122-light-interface"><span class="toc-number">2.</span> <span class="toc-text"> 12.2 Light Interface</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1221-%E5%8F%AF%E8%A7%81%E6%80%A7%E6%B5%8B%E8%AF%95"><span class="toc-number">2.1.</span> <span class="toc-text"> 12.2.1 可见性测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#123-point-lights"><span class="toc-number">3.</span> <span class="toc-text"> 12.3 Point Lights</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1231-%E7%82%B9%E5%85%89%E6%BA%90"><span class="toc-number">3.1.</span> <span class="toc-text"> 12.3.1 点光源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1232-%E8%81%9A%E5%85%89%E7%81%AF"><span class="toc-number">3.2.</span> <span class="toc-text"> 12.3.2 聚光灯</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1233-%E6%9D%90%E8%B4%A8%E6%8A%95%E5%BD%B1%E5%85%89%E6%BA%90"><span class="toc-number">3.3.</span> <span class="toc-text"> 12.3.3 材质投影光源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1234-goniophotometric-diagram-lights"><span class="toc-number">3.4.</span> <span class="toc-text"> 12.3.4 Goniophotometric Diagram Lights</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#124-distant-lights"><span class="toc-number">4.</span> <span class="toc-text"> 12.4 Distant Lights</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#125-area-lights"><span class="toc-number">5.</span> <span class="toc-text"> 12.5 Area Lights</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#126-infinite-area-lights"><span class="toc-number">6.</span> <span class="toc-text"> 12.6 Infinite Area Lights</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-PBRT-ch12" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PBRT 第十二章笔记 | Notes for PBRT Chapter 12 - Light Sources
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-12-07T11:54:28.000Z" itemprop="datePublished">2021-12-07</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/PBRT/" rel="tag">PBRT</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 4.1k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 15 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>若要使场景中的物体可见，场景中必定需要有向外辐射光子的光源。本节将首先讨论不同的发光物理过程，并引入基础的 <code>Light</code> 抽象类。紧接着讲解几种常用的光源类型。</p>
+<h1 id="121-light-emission"><a class="markdownIt-Anchor" href="#121-light-emission"></a> 12.1 Light Emission</h1>
+<p>所有非处在绝对零度的物体中均有运动的原子。而根据麦克斯韦定理，运动的电荷会向四周辐射电磁波。大部分室温下的物体辐射的波长均在红外波段，而辐射可见光波段的物体则需要具有更高的温度。当前市面上常见的物理光源有以下几种：</p>
+<ul>
+<li>白炽灯：它使用一根钨丝通过大量电流产生热量从而发光。其发光的颜色（即能量在各个波长上的分布）取决于钨丝的温度。钨丝的外侧通常被一层磨砂玻璃包裹以吸收特定波长的光线，从而获得需要的 SPD 。白炽灯的大部分能量均集中在红外波段，也就是说输入它的能量大部分转换为了热量而非光能。</li>
+<li>卤素灯：这种灯相当于在白炽灯的真空中填充了卤素气体。在普通白炽灯中，钨丝会在加热过程中逐渐升华、进而沉积在灯泡内壁上使得灯泡变暗。卤素灯中的卤素气体能通过将大部分气化的钨重新附着回灯丝上而延长灯泡的寿命。</li>
+<li>气体放电灯：这种灯在气体中直接施加电流，使得这些气体根据原子的性质释放出特定波长的光线。在灯管的内侧常常涂有荧光材料以吸收有害的紫外线，并将能量转化到更多的波长范围上。</li>
+<li>LED 灯：这一类灯基于电激发光的原理制造，它使用在通电时释放光子的特殊材料制作。</li>
+</ul>
+<p>对于气体放电灯和 LED 灯具，其相通的底层物理原理均是电子与原子撞击时产生的外层电子层级跃迁现象。当外层电子回到低能级时就会将能量以光能释放。</p>
+<p>对于物理光源，我们可以定义它的光转换效率：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mo>∫</mo><msub><mi mathvariant="normal">Φ</mi><mi>e</mi></msub><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mi>V</mi><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mi mathvariant="normal">d</mi><mi>λ</mi></mrow><mrow><mo>∫</mo><msub><mi mathvariant="normal">Φ</mi><mi>i</mi></msub><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mi mathvariant="normal">d</mi><mi>λ</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\int\Phi_e(\lambda)V(\lambda)\mathrm{d}\lambda \over \int\Phi_i(\lambda)\mathrm{d}\lambda
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.5022400000000005em;vertical-align:-1.00112em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.5011200000000002em;"><span style="top:-2.305em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop op-symbol small-op" style="margin-right:0.19445em;position:relative;top:-0.0005599999999999772em;">∫</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord">Φ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathdefault">λ</span><span class="mclose">)</span><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault">λ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.69612em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop op-symbol small-op" style="margin-right:0.19445em;position:relative;top:-0.0005599999999999772em;">∫</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord">Φ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathdefault">λ</span><span class="mclose">)</span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="mopen">(</span><span class="mord mathdefault">λ</span><span class="mclose">)</span><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault">λ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.00112em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>式中的 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>V</mi></mrow><annotation encoding="application/x-tex">V</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span></span></span></span> 代表 5.4.3 中提到的观测者的光谱响应曲线，表示接收者对不同波段的光的敏感程度。另一方面，该式的分子部分也可以使用光具使用的总能量代替。它的量纲是 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">/</mi><mi mathvariant="normal">W</mi></mrow><annotation encoding="application/x-tex">\mathrm{lm / W}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">l</span><span class="mord mathrm">m</span><span class="mord mathrm">/</span><span class="mord mathrm" style="margin-right:0.01389em;">W</span></span></span></span></span> ，以白炽灯为例，它的转换率大约是 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>15</mn><mtext> </mtext><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">/</mi><mi mathvariant="normal">W</mi></mrow></mrow><annotation encoding="application/x-tex">15 \ \mathrm{lm / W}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mord">5</span><span class="mspace"> </span><span class="mord"><span class="mord mathrm">l</span><span class="mord mathrm">m</span><span class="mord mathrm">/</span><span class="mord mathrm" style="margin-right:0.01389em;">W</span></span></span></span></span> 。</p>
+<h2 id="1211-黑体辐射"><a class="markdownIt-Anchor" href="#1211-黑体辐射"></a> 12.1.1 黑体辐射</h2>
+<p>黑体是一种完美的辐射体，它会吸收所有的能量，并只根据自身的温度发射电磁波。黑体发出的辐射 SPD 可以用一个关于波长和温度的公式描述，根据普朗克定律：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mi>e</mi></msub><mo stretchy="false">(</mo><mi>λ</mi><mo separator="true">,</mo><mi>T</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mn>2</mn><mi>h</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mrow><msup><mi>λ</mi><mn>5</mn></msup><mo stretchy="false">(</mo><msup><mi>e</mi><mrow><mi>h</mi><mi>c</mi><mi mathvariant="normal">/</mi><mi>λ</mi><msub><mi>k</mi><mi>b</mi></msub><mi>T</mi></mrow></msup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">L_e(\lambda,T) = {2hc^2 \over \lambda^5(e^{hc/\lambda k_b T} - 1)}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathdefault">λ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.4451080000000003em;vertical-align:-0.954em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.491108em;"><span style="top:-2.2960000000000003em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault">λ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.740108em;"><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">5</span></span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.814em;"><span style="top:-2.989em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">c</span><span class="mord mtight">/</span><span class="mord mathdefault mtight">λ</span><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.03148em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:-0.03148em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathdefault mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span><span class="mord mathdefault">h</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.954em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></span></p>
+<p>其中 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>h</mi></mrow><annotation encoding="application/x-tex">h</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">h</span></span></span></span> 是普朗克常数，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>c</mi></mrow><annotation encoding="application/x-tex">c</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">c</span></span></span></span> 是光速，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>k</mi><mi>b</mi></msub></mrow><annotation encoding="application/x-tex">k_b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03148em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.03148em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 是玻尔兹曼常数 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>1.3806488</mn><mo>×</mo><mn>1</mn><msup><mn>0</mn><mrow><mo>−</mo><mn>23</mn></mrow></msup><mrow><mi mathvariant="normal">J</mi><mi mathvariant="normal">/</mi><mi mathvariant="normal">K</mi></mrow></mrow><annotation encoding="application/x-tex">1.3806488 \times 10^{-23} \mathrm{J/K}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.72777em;vertical-align:-0.08333em;"></span><span class="mord">1</span><span class="mord">.</span><span class="mord">3</span><span class="mord">8</span><span class="mord">0</span><span class="mord">6</span><span class="mord">4</span><span class="mord">8</span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.064108em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mord"><span class="mord">0</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">2</span><span class="mord mtight">3</span></span></span></span></span></span></span></span></span><span class="mord"><span class="mord mathrm">J</span><span class="mord mathrm">/</span><span class="mord mathrm">K</span></span></span></span></span></p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/blackbody-L-vs-lambda.svg" style="max-height: 18vh; margin: 10px 0"/></center>
+<p>玻尔兹曼公式给出了黑体上任意一点处的全频段辐出功率（单位是 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">W</mi><mi mathvariant="normal">/</mi><msup><mi mathvariant="normal">m</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\mathrm{W/m^2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.064108em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">W</span><span class="mord mathrm">/</span><span class="mord"><span class="mord mathrm">m</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathrm mtight">2</span></span></span></span></span></span></span></span></span></span></span></span>）：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>M</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo><mi>σ</mi><msup><mi>T</mi><mn>4</mn></msup><mo separator="true">,</mo><mtext> </mtext><mi>σ</mi><mo>=</mo><mn>5.67032</mn><mo>×</mo><mn>1</mn><msup><mn>0</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup><mi>W</mi><msup><mi>m</mi><mrow><mo>−</mo><mn>2</mn></mrow></msup><msup><mi>K</mi><mrow><mo>−</mo><mn>4</mn></mrow></msup></mrow><annotation encoding="application/x-tex">M(p) = \sigma T^4, \ \sigma = 5.67032 \times 10^{-8} Wm^{-2}K^{-4}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathdefault">p</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.0585479999999998em;vertical-align:-0.19444em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">σ</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">4</span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mspace"> </span><span class="mord mathdefault" style="margin-right:0.03588em;">σ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.72777em;vertical-align:-0.08333em;"></span><span class="mord">5</span><span class="mord">.</span><span class="mord">6</span><span class="mord">7</span><span class="mord">0</span><span class="mord">3</span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.864108em;vertical-align:0em;"></span><span class="mord">1</span><span class="mord"><span class="mord">0</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.864108em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">8</span></span></span></span></span></span></span></span></span><span class="mord mathdefault" style="margin-right:0.13889em;">W</span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.864108em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">2</span></span></span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">K</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.864108em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">4</span></span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>从黑体辐射公式我们也能很容易地知道能量最高的频率：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>λ</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub><mo>=</mo><mfrac><mi>b</mi><mi>T</mi></mfrac><mo separator="true">,</mo><mtext> </mtext><mi>b</mi><mo>=</mo><mn>2.897721</mn><mo>×</mo><mn>1</mn><msup><mn>0</mn><mrow><mo>−</mo><mn>3</mn></mrow></msup><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">K</mi></mrow></mrow><annotation encoding="application/x-tex">\lambda_{max} = {b \over T}, \ b = 2.897721 \times 10^{-3} \mathrm{mK}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">λ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">m</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.05744em;vertical-align:-0.686em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.37144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mspace"> </span><span class="mord mathdefault">b</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.72777em;vertical-align:-0.08333em;"></span><span class="mord">2</span><span class="mord">.</span><span class="mord">8</span><span class="mord">9</span><span class="mord">7</span><span class="mord">7</span><span class="mord">2</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.864108em;vertical-align:0em;"></span><span class="mord">1</span><span class="mord"><span class="mord">0</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.864108em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">3</span></span></span></span></span></span></span></span></span><span class="mord"><span class="mord mathrm">m</span><span class="mord mathrm">K</span></span></span></span></span></span></p>
+<p>而对于非黑体而言，根据基尔荷夫公式可得：对于任何达到了热平衡的物体，给定其出射的方向和温度，其 SPD 应该正比于黑体辐射，且比例与该方向上的半球反照率有关。表示的公式如下：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msubsup><mi>L</mi><mi>e</mi><mo mathvariant="normal">′</mo></msubsup><mo stretchy="false">(</mo><mi>T</mi><mo separator="true">,</mo><mi>λ</mi><mo separator="true">,</mo><mi>ω</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>L</mi><mi>e</mi></msub><mo stretchy="false">(</mo><mi>T</mi><mo separator="true">,</mo><mi>λ</mi><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>ρ</mi><mrow><mi>h</mi><mi>x</mi></mrow></msub><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">L_e&#x27;(T,\lambda,\omega) = L_e(T,\lambda)(1 - \rho_{hx}(\omega))
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.051892em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8018919999999999em;"><span style="top:-2.4530000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">λ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">e</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">λ</span><span class="mclose">)</span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">x</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="mclose">)</span><span class="mclose">)</span></span></span></span></span></p>
+<p>黑体辐射可以定义发光体的色温。如果某一发光体的 SPD 与某一温度 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>T</mi></mrow><annotation encoding="application/x-tex">T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span></span> 下的黑体辐射相似 ，我们可以称其色温为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>T</mi></mrow><annotation encoding="application/x-tex">T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span></span> 。一般而言，卤素灯和白炽灯的色温一般在 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>2700</mn><mo>∼</mo><mn>3000</mn><mi mathvariant="normal">K</mi></mrow><annotation encoding="application/x-tex">2700 \sim 3000 \mathrm{K}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">2</span><span class="mord">7</span><span class="mord">0</span><span class="mord">0</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">3</span><span class="mord">0</span><span class="mord">0</span><span class="mord">0</span><span class="mord"><span class="mord mathrm">K</span></span></span></span></span> 之间，而荧光灯的色温可以达到 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>3000</mn><mo>∼</mo><mn>6000</mn><mi mathvariant="normal">K</mi></mrow><annotation encoding="application/x-tex">3000 \sim 6000 \mathrm{K}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">3</span><span class="mord">0</span><span class="mord">0</span><span class="mord">0</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">6</span><span class="mord">0</span><span class="mord">0</span><span class="mord">0</span><span class="mord"><span class="mord mathrm">K</span></span></span></span></span> 。人们可以通过色温高低区分颜色的冷暖。</p>
+<h2 id="1212-standard-illuminants"><a class="markdownIt-Anchor" href="#1212-standard-illuminants"></a> 12.1.2 Standard Illuminants</h2>
+<p>另一种用于区分发光能量分布的方式是将 SPD 与 CIE 标准光源的 SPD 作为代表，并归类到 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>A</mi></mrow><annotation encoding="application/x-tex">A</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">A</span></span></span></span> 至 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>F</mi></mrow><annotation encoding="application/x-tex">F</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">F</span></span></span></span>  的其中一类的标准发光体上。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/cie-a.svg" style="max-height: 18vh; margin: 10px 0"/></center>
+<p>Standard Illuminant A 于 1931 年引入，它最初的目的是为了体现大部分白炽灯的发光性能，因此设为了当时 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>2850</mn><mi mathvariant="normal">K</mi></mrow><annotation encoding="application/x-tex">2850\mathrm{K}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">2</span><span class="mord">8</span><span class="mord">5</span><span class="mord">0</span><span class="mord"><span class="mord mathrm">K</span></span></span></span></span> 的黑体辐射 SPD ，随着技术进步，数值精度的提高，现代的 Standard Illuminant A 相当于 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>2856</mn><mi mathvariant="normal">K</mi></mrow><annotation encoding="application/x-tex">2856\mathrm{K}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">2</span><span class="mord">8</span><span class="mord">5</span><span class="mord">6</span><span class="mord"><span class="mord mathrm">K</span></span></span></span></span> 的黑体辐射。</p>
+<p>Standard Illuminant B 和 C 原本用于建模一天中的两个时段的天光，但目前已经不再使用。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/cie-d6500.svg" style="max-height: 18vh; margin: 10px 0"/></center>
+<p>Standard Illuminant D 则描述了天光的不同形态。它由一系列有关天光 SPD 的向量分析得出，具有一个固定部分和两个可变加权部分。两个可变部分分别代表了一个在黄蓝色域上的云量变量以及一个在粉绿色域上的大气含水量变量。特别地，D65 标准是一个类 6504K 的黑体辐射 SPD ，它表示了欧洲正午十分的光线。</p>
+<p>Standard Illuminant E 表示了一个常数 SPD ，一般仅被用于和其它组分比较。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/cie-f4-f9.svg" style="max-height: 18vh; margin: 10px 0"/></center>
+<p>Standard Illuminant F 则表示了一系列不同的荧光 SPD ，它们的定义来自于对一系列常用荧光灯的 SPD 测量值。</p>
+<h1 id="122-light-interface"><a class="markdownIt-Anchor" href="#122-light-interface"></a> 12.2 Light Interface</h1>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Light</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Light Interface</span></span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">Light</span>();</span><br><span class="line">    <span class="built_in">Light</span>(<span class="keyword">int</span> flags, <span class="keyword">const</span> Transform &amp;LightToWorld,</span><br><span class="line">          <span class="keyword">const</span> MediumInterface &amp;mediumInterface, <span class="keyword">int</span> nSamples = <span class="number">1</span>);</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Spectrum <span class="title">Sample_Li</span><span class="params">(<span class="keyword">const</span> Interaction &amp;ref, <span class="keyword">const</span> Point2f &amp;u,</span></span></span><br><span class="line"><span class="params"><span class="function">                               Vector3f *wi, Float *pdf,</span></span></span><br><span class="line"><span class="params"><span class="function">                               VisibilityTester *vis)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Spectrum <span class="title">Power</span><span class="params">()</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Preprocess</span><span class="params">(<span class="keyword">const</span> Scene &amp;scene)</span> </span>&#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Spectrum <span class="title">Le</span><span class="params">(<span class="keyword">const</span> RayDifferential &amp;r)</span> <span class="keyword">const</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Float <span class="title">Pdf_Li</span><span class="params">(<span class="keyword">const</span> Interaction &amp;ref, <span class="keyword">const</span> Vector3f &amp;wi)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> Spectrum <span class="title">Sample_Le</span><span class="params">(<span class="keyword">const</span> Point2f &amp;u1, <span class="keyword">const</span> Point2f &amp;u2, Float time,</span></span></span><br><span class="line"><span class="params"><span class="function">                               Ray *ray, Normal3f *nLight, Float *pdfPos,</span></span></span><br><span class="line"><span class="params"><span class="function">                               Float *pdfDir)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Pdf_Le</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray, <span class="keyword">const</span> Normal3f &amp;nLight, Float *pdfPos,</span></span></span><br><span class="line"><span class="params"><span class="function">                        Float *pdfDir)</span> <span class="keyword">const</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Light Public Data</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> flags;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> nSamples;</span><br><span class="line">    <span class="keyword">const</span> MediumInterface mediumInterface;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span>:</span><br><span class="line">    <span class="comment">// Light Protected Data</span></span><br><span class="line">    <span class="keyword">const</span> Transform LightToWorld, WorldToLight;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>所有的 <code>Light</code> 派生类均含有以下四个变量：</p>
+<ol>
+<li><code>flags</code> 变量表示了基础的光源类型，其中包括了面光源、点光源、方向光源等。蒙特卡洛算法需要根据光源的不同类型做出不同的计算</li>
+<li>一组表示了光源与世界坐标互相转化的变换，光源一般都定义在光源坐标的原点，并使用统一的方向</li>
+<li>一个表示了光源所在介质的 <code>MediumInterface</code></li>
+<li><code>nSamples</code> 变量表示了面光源使用的采样数量</li>
+</ol>
+<p>对光源而言，最重要的接口是 <code>Sample_Li()</code> 函数。它接受一个代表了目标点的世界坐标的 <code>Interaction</code> 参数，并返回在没有遮挡的情况下、从光源到达该位置的 radiance 量。值得注意的是，PBRT 中的光源并不支持动画，所有光源必须是静止的。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/Light%20Sample%20Li.svg" style="max-height: 20vh; margin: 10px 0"/></center>
+<p><code>Sample_Li()</code> 还负责初始化光源到着色点位置的射线 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>ω</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\omega_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> 、以及使用阴影光线测试光源是否可见的 <code>VisibilityTester</code> 对象（虽然当返回值为黑色时这一对象不会被使用）。</p>
+<p>另一个所有光源类需要实现的接口是返回其释放的所有能量之和的 <code>Power()</code> 函数。这一值对于一些光线传输算法（如找到贡献度最高的光源并计算阴影）而言具有一定意义，但它并不需要返回一个完全精确的值。</p>
+<p>最后，所有光源还具有一个预处理接口，用于在渲染前使用场景信息事先生成一部分数据以供其后使用。</p>
+<h2 id="1221-可见性测试"><a class="markdownIt-Anchor" href="#1221-可见性测试"></a> 12.2.1 可见性测试</h2>
+<p><code>VisibilityTester</code> 是一个闭包——它包裹了一部分数据和一部分需要完成的计算内容。将这一部分单独抽象出来使得光源类可以在无遮挡的假设下返回信息，而让 <code>Integrator</code> 决定该信息是否被使用。</p>
+<p>这个类中储存了两个 <code>Interaction</code> 数据，代表了一条 shadow ray 的两端。<code>Integrator</code> 接下来可以使用任意一个函数 <code>Unoccluded()</code> 或 <code>Tr()</code> 来获得这条 shadow ray 上面的光线传输量。</p>
+<p>第一个接口仅返回一个布尔值代表光源和着色点之间是否没有遮挡，而第二个接口则会沿途调用所有介质的 <code>Tr()</code> 接口，返回最终的传输率。</p>
+<h1 id="123-point-lights"><a class="markdownIt-Anchor" href="#123-point-lights"></a> 12.3 Point Lights</h1>
+<h2 id="1231-点光源"><a class="markdownIt-Anchor" href="#1231-点光源"></a> 12.3.1 点光源</h2>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/dragon-point.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>最基础的点光源向各个方向均匀地释放能量，它的位置固定在灯光坐标系的原点位置。描述点光源的物理量是一个常量 <code>intensity</code> ，表示单位立体角上从这个光源释放的能量。它的光源类型被设置为 <code>LightFlags::DeltaPosition</code> 。为了减少重复的变换计算，它储存了一个预计算量 <code>pLight</code> 表示点光源在世界坐标下的位置。</p>
+<p>对于其 <code>Sample_Li</code> 接口，通过简单地将 intensity 除以距离的平方即可得到对应的 radiance ，而 <code>Power</code> 接口则可以由立体角积分得到解析解 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">Φ</mi><mo>=</mo><msubsup><mo>∫</mo><mi>S</mi><mn>2</mn></msubsup><mi>I</mi><mi mathvariant="normal">d</mi><mi>ω</mi><mo>=</mo><mn>4</mn><mi>π</mi><mi>I</mi></mrow><annotation encoding="application/x-tex">\Phi = \int_S^2I\mathrm{d}\omega = 4\pi I</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.3648280000000002em;vertical-align:-0.35582em;"></span><span class="mop"><span class="mop op-symbol small-op" style="margin-right:0.19445em;position:relative;top:-0.0005599999999999772em;">∫</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0090080000000001em;"><span style="top:-2.34418em;margin-left:-0.19445em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.05764em;">S</span></span></span><span style="top:-3.2579000000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35582em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.07847em;">I</span><span class="mord"><span class="mord mathrm">d</span></span><span class="mord mathdefault" style="margin-right:0.03588em;">ω</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">4</span><span class="mord mathdefault" style="margin-right:0.03588em;">π</span><span class="mord mathdefault" style="margin-right:0.07847em;">I</span></span></span></span></p>
+<h2 id="1232-聚光灯"><a class="markdownIt-Anchor" href="#1232-聚光灯"></a> 12.3.2 聚光灯</h2>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/dragon-spot.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>与点光源向所有方向发射能量不同，聚光灯指向光线坐标的 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo>+</mo><mi>z</mi></mrow><annotation encoding="application/x-tex">+z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66666em;vertical-align:-0.08333em;"></span><span class="mord">+</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span> 方向的一个锥体内发射光线。这个锥体由两个角度 <code>totalWidth</code> 和 <code>falloffStart</code> 定义如下：</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/Spotlight%20angles.svg" style="max-height: 15vh; margin: 10px 0"/></center>
+<p>聚光灯 <code>Sample_Li</code> 的接口实际上就相当于将点光源乘以一个衰减项：光线从 <code>falloffStart</code> 角度开始衰减，直到 <code>totalWidth</code> 位置最终变为零。<code>SpotLight</code> 类型中负责计算这一衰减值的函数是 <code>Falloff()</code> 。</p>
+<p>衰减函数的计算流程也并不困难：首先计算光线方向与聚光灯方向的 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>cos</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\cos</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mop">cos</span></span></span></span> 夹角，再将这个夹角与 <code>cosTotalWidth, cosFalloffStart</code> 比较。若光线在衰减范围内，则使用一个四次方 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>cos</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\cos</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mop">cos</span></span></span></span> 的插值作为衰减值，这部分代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Compute falloff inside spotlight cone</span></span><br><span class="line">Float delta = (cosTheta - cosTotalWidth) /</span><br><span class="line">              (cosFalloffStart - cosTotalWidth);</span><br><span class="line"><span class="keyword">return</span> (delta * delta) * (delta * delta);</span><br></pre></td></tr></table></figure>
+<p>给定锥体角度，其张成的立体角度为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>2</mn><mi>π</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">2\pi(1 - \cos\theta)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mord mathdefault" style="margin-right:0.03588em;">π</span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">cos</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span></span></span></span> ，由于 <code>Power</code> 并不要求对衰减区域内的能量求精确解，我们可以直接使用一个无衰减的、立体角度 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>cos</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\cos</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mop">cos</span></span></span></span> 为 <code>cosTotalWidth, cosFalloffStart</code> 的中值的圆锥体替代求解，即：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Spectrum <span class="title">SpotLight::Power</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> I * <span class="number">2</span> * Pi * (<span class="number">1</span> - <span class="number">.5</span>f * (cosFalloffStart + cosTotalWidth));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="1233-材质投影光源"><a class="markdownIt-Anchor" href="#1233-材质投影光源"></a> 12.3.3 材质投影光源</h2>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/dragon-projection.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>这类材质接收一个二维的图像作为映射，从一点按给定的 fov 投影到一个锥体上。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/Projection%20light%20setting.svg" style="max-height: 16vh; margin: 10px 0"/></center>
+<p>与透视相机类似地，材质投影光源也会计算一个投影矩阵。除此之外，他还会计算从中点到角点这一夹角的余弦值以确定包裹了这一投影的最小圆锥体。</p>
+<p>在 <code>Sample_Li()</code> 的过程中，首先会调用投影矩阵获得着色点在材质上的 uv 位置，接着从材质上采样对应位置（PBRT 在这里并没有使用到偏导数纠正采样）。最后将颜色值乘以 intensity 并除以距离的平方即可得到 radiance 。</p>
+<p>对于光线释放的总能量，由于 mipmap 的最高层级以将计算过整体材质颜色值的均值，我们直接通过对最高层查询即可得到它。接着会使用之前的最小包裹锥体的立体角替代方形锥体的立体角计算总能量。需要注意的是，这一近似在投影长宽比接近方形时才比较准确，否则可能带来较大的误差。</p>
+<h2 id="1234-goniophotometric-diagram-lights"><a class="markdownIt-Anchor" href="#1234-goniophotometric-diagram-lights"></a> 12.3.4 Goniophotometric Diagram Lights</h2>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/dragon-gonio.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>这类光源使用一张球形贴图包裹点光源，使用对应方向上采样的亮度值模拟点光源发光的方向性，在采样光线时，根据光线的方向计算出球坐标的 uv ，将贴图采样值与 intensity 相乘、最后除以距离的平方即可得到 radiance 。在计算能量时，也只需要简单地将贴图的均值乘以点光源的能量即可。</p>
+<h1 id="124-distant-lights"><a class="markdownIt-Anchor" href="#124-distant-lights"></a> 12.4 Distant Lights</h1>
+<p>这种光源放置在极其遥远的位置，因此光线的方向近乎平行，又被称为方向光源。由于其距离极其遥远，我们通常认为它必定是在真空中，而不经过介质计算。但当采样光线时，这类光源需要知道场景的边界，以从场景的边界外的某一点出发采样光线，从而可以对场景内的介质做出反应。因此，<code>DistantLight::Preprocess</code> 接口会记录场景的包围球，并写入自身的成员变量中。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/DistantLight%20shadow%20ray.svg" style="max-height: 21vh; margin: 10px 0"/></center>
+<p>对光源的采样而言，我们只需要初始化一个从着色点开始，长度为场景包围球直径的 shadow ray ，并直接返回本光源对应的 radiance 即可。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/DistantLight%20approx%20power.svg" style="max-height: 12vh; margin: 10px 0"/></center>
+<p>当我们需要计算这类光源释放的总能量时，我们会将场景的包围球投影到与光线垂直的平面上，通过对 radiance 的积分得到总能量 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>2</mn><mi>π</mi><msup><mi>r</mi><mn>2</mn></msup><mo>×</mo><mi>L</mi></mrow><annotation encoding="application/x-tex">2\pi r^2 \times L</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.897438em;vertical-align:-0.08333em;"></span><span class="mord">2</span><span class="mord mathdefault" style="margin-right:0.03588em;">π</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">L</span></span></span></span></p>
+<h1 id="125-area-lights"><a class="markdownIt-Anchor" href="#125-area-lights"></a> 12.5 Area Lights</h1>
+<p>面光源是使用至少一个几何体定义的发光表面。表面上的每一点又可能拥有各自的方向性辐射能量分布。总的来说，对面光源求解到达着色点的能量需要在整个光源上进行积分，但这实际上是几乎不可能做到的。高复杂度带来的是柔和的、更加贴近现实表现的软阴影，而不是像之前的光源一样的硬边界。</p>
+<center><img src="https://pbr-book.org/3ed-2018/Light_Sources/area-scene-wide.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p><code>AreaLight</code> 是继承于 <code>Light</code> 类的一个抽象类，它提供了一个新的接口 <code>AreaLight::L()</code> ，给定表面上的一点和出射方向，本接口会返回该条光线上的 radiance 。<code>SurfaceInteraction::Le()</code> 便调用了这一方法计算自发光的 radiance 。</p>
+<p><code>DiffuseAreaLight</code> 实现了一种面光源的一般形态，它向四周均匀地发射光线。它使用一个 <code>Shape</code> 指针指向发光的表面，并在法线正半球均匀发出光线。由于其发光的均匀性，在实现上述 <code>L()</code> 接口时只需要简单地测试出射光线是否在出射位置的法线正半球内即可。</p>
+<p>计算面光源的 <code>Sample_Li()</code> 较为困难，这一部分将在 14 章中详细描述。</p>
+<p>而 <code>DiffuseAreaLight</code> 的总能量则可以通过将表面的每个点视为一个点光源，并在表面上积分得到：<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">Φ</mi><mo>=</mo><mi>L</mi><mo>×</mo><mi>S</mi><mi>π</mi></mrow><annotation encoding="application/x-tex">\Phi = L \times S\pi</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.76666em;vertical-align:-0.08333em;"></span><span class="mord mathdefault">L</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault" style="margin-right:0.03588em;">π</span></span></span></span></p>
+<h1 id="126-infinite-area-lights"><a class="markdownIt-Anchor" href="#126-infinite-area-lights"></a> 12.6 Infinite Area Lights</h1>
+<p>在一些情况下，我们需要一些来自无穷远的，包围整个场景的面积无穷大的光源（如天光等环境光照）。一种常用的表现方法时使用一个经纬度 radiance （又称 equirectangular projection ）贴图表示从各个方位而来的光线 radiance 。</p>
+<p>与 <code>DistantLight</code> 类似，<code>InfiniteAreaLight</code> 也需要在预计算期间获得场景的包围球。由于其需要在一整块区域上采样光源，采样期间也需要蒙特卡洛方法的帮助。接下来会在 14 章中详细描述 PDF 的预计算以及光线采样的内容。</p>
+<p>计算这类光源的总能量的方法和平行光类似，它同样使用场景的球面近似，近似方法为：<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">Φ</mi><mo>=</mo><mover accent="true"><mi>L</mi><mo>ˉ</mo></mover><mo>×</mo><mi>π</mi><msubsup><mi>r</mi><mrow><mi>s</mi><mi>c</mi><mi>e</mi><mi>n</mi><mi>e</mi></mrow><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">\Phi = \bar{L} \times \pi r_{scene}^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.9034399999999999em;vertical-align:-0.08333em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8201099999999999em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault">L</span></span></span><span style="top:-3.25233em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.22222em;">ˉ</span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.061108em;vertical-align:-0.247em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">π</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-2.4530000000000003em;margin-left:-0.02778em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">n</span><span class="mord mathdefault mtight">e</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span></span></span></span></p>
+<p>由于这种光源同样会对没有击中物体的光线产生影响，在 <code>Light</code> 抽象类中还有另外一个接口 <code>Le()</code> 用于处理没有发生相交的光线。</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/12/PBRT-ch12/" title="PBRT 第十二章笔记 | Notes for PBRT Chapter 12 - Light Sources" target="_blank" rel="external">https://blog.apassbydreg.work/2021/12/PBRT-ch12/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../PBRT-ch13/" title="PBRT 第十三章笔记 | Notes for PBRT Chapter 13 - Monte Carlo Integration"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../OptixBasedRendererFramework-v0-2/" title="基于 Optix 的渲染器框架 v0.2 | Optix Based Renderer Framework v0.2"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

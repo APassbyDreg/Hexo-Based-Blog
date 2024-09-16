@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《GPU Gem3》第十二章笔记 - AO | Notes for GPU Gems 3 Chapter 12 - High-Quality Ambient Occlusion | Blog of Martin Z He</title>
+  <meta name="description" content="早期算法 最开始的 AO 技术在多边形的顶点上使用 disk 近似相邻的多边形，接着将顶点周围的各个 disk 贡献的阴影累积到顶点上以近似 AO 。但这一做法忽略了可见性：被其他 disk 遮挡的 disk 不应该贡献 AO 。其中一种解决方法是以顶点的 occlusion 近似 visibility ，并迭代多次以使结果收敛。 这种算法的最大问题在于它 O(n2)O(n^2)O(n2) 的时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《GPU Gem3》第十二章笔记 - AO | Notes for GPU Gems 3 Chapter 12 - High-Quality Ambient Occlusion">
+<meta property="og:url" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="早期算法 最开始的 AO 技术在多边形的顶点上使用 disk 近似相邻的多边形，接着将顶点周围的各个 disk 贡献的阴影累积到顶点上以近似 AO 。但这一做法忽略了可见性：被其他 disk 遮挡的 disk 不应该贡献 AO 。其中一种解决方法是以顶点的 occlusion 近似 visibility ，并迭代多次以使结果收敛。 这种算法的最大问题在于它 O(n2)O(n^2)O(n2) 的时">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-1.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-2.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-3.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-4.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-5.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-6.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-7.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-8.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-9.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-10.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-11.png">
+<meta property="article:published_time" content="2022-03-16T12:47:02.000Z">
+<meta property="article:modified_time" content="2022-03-16T16:18:30.507Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="CG">
+<meta property="article:tag" content="render">
+<meta property="article:tag" content="GPU Gems 3">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/12-1.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%97%A9%E6%9C%9F%E7%AE%97%E6%B3%95"><span class="toc-number">1.</span> <span class="toc-text"> 早期算法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#disk-shaped-artifacts"><span class="toc-number">1.1.</span> <span class="toc-text"> Disk - Shaped Artifacts</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%AB%98%E9%A2%91%E7%9A%84%E6%8C%A4%E5%8E%8B-artifacts"><span class="toc-number">1.2.</span> <span class="toc-text"> 高频的挤压 Artifacts</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E7%A7%8D%E9%B2%81%E6%A3%92%E7%9A%84%E7%AE%97%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text"> 一种鲁棒的算法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B9%B3%E6%BB%91%E4%B8%8D%E8%BF%9E%E7%BB%AD%E4%BD%8D%E7%BD%AE"><span class="toc-number">2.1.</span> <span class="toc-text"> 平滑不连续位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%BB%E9%99%A4%E6%8C%A4%E5%8E%8B%E5%B9%B6%E5%A2%9E%E5%8A%A0%E7%BB%86%E8%8A%82"><span class="toc-number">2.2.</span> <span class="toc-text"> 去除挤压并增加细节</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%93%E6%9E%9C%E5%AF%B9%E6%AF%94"><span class="toc-number">3.</span> <span class="toc-text"> 结果对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B8%B2%E6%9F%93%E7%BB%93%E6%9E%9C"><span class="toc-number">3.1.</span> <span class="toc-text"> 渲染结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E8%A1%A8%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text"> 性能表现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">4.</span> <span class="toc-text"> 注意事项</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%BA%E5%88%B6%E6%94%B6%E6%95%9B"><span class="toc-number">4.1.</span> <span class="toc-text"> 强制收敛</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%AF%E8%B0%83%E5%8F%82%E6%95%B0"><span class="toc-number">4.2.</span> <span class="toc-text"> 可调参数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%9D%E7%A6%BB%E8%A1%B0%E5%87%8F"><span class="toc-number">4.2.1.</span> <span class="toc-text"> 距离衰减</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E8%A7%92%E5%BD%A2%E8%A1%B0%E5%87%8F"><span class="toc-number">4.2.2.</span> <span class="toc-text"> 三角形衰减</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#future-work"><span class="toc-number">5.</span> <span class="toc-text"> Future Work</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-GPUGems3-ch12" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《GPU Gem3》第十二章笔记 - AO | Notes for GPU Gems 3 Chapter 12 - High-Quality Ambient Occlusion
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2022-03-16T12:47:02.000Z" itemprop="datePublished">2022-03-16</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/CG/" rel="tag">CG</a>, <a class="article-tag-link-link" href="../../../tags/GPU-Gems-3/" rel="tag">GPU Gems 3</a>, <a class="article-tag-link-link" href="../../../tags/render/" rel="tag">render</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 1.9k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 8 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="早期算法"><a class="markdownIt-Anchor" href="#早期算法"></a> 早期算法</h1>
+<p>最开始的 AO 技术在多边形的顶点上使用 disk 近似相邻的多边形，接着将顶点周围的各个 disk 贡献的阴影累积到顶点上以近似 AO 。但这一做法忽略了可见性：被其他 disk 遮挡的 disk 不应该贡献 AO 。其中一种解决方法是以顶点的 occlusion 近似 visibility ，并迭代多次以使结果收敛。</p>
+<p>这种算法的最大问题在于它 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><msup><mi>n</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n^2)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.064108em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">n</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> 的时间复杂度在实践中很难实现。Bunnell 等[2005]根据远处的 disk 的贡献较小而可以使用一个聚合体近似的观察设计了 disk 的层次树状结构，从顶至下近似的精度越来越高。这有效地将复杂度降低至 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mi>log</mi><mo>⁡</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathdefault">n</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">n</span><span class="mclose">)</span></span></span></span> ，进而可以实时地完成对可变形物体的 AO 计算。但这种方法也并非没有问题。</p>
+<p>这种原始的算法可以较好地应用于拥有平滑的顶点 AO 过渡的几何体，以便可以在三角形上插值 AO 的影响，但高质量的渲染需要更加细粒度且更加复杂、不连续的 AO 计算。它无法模拟高频的接触阴影，会造成插值错误，还可能引入更多的 artifacts :</p>
+<center style="margin-bottom: 10px"><img src="12-1.png" style="max-width: 16vw; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="12-2.png" style="max-width: 16vw; margin: 10px 0"/></center>
+<h2 id="disk-shaped-artifacts"><a class="markdownIt-Anchor" href="#disk-shaped-artifacts"></a> Disk - Shaped Artifacts</h2>
+<p>上图中的 bunny 背部出现了圆形的错误，这些错误被称为 Disk - Shaped Artifacts ，它会导致画面上出现明显的圆形的亮暗分界线。这主要是在遍历树状结构时的离散估计操作导致的。</p>
+<h2 id="高频的挤压-artifacts"><a class="markdownIt-Anchor" href="#高频的挤压-artifacts"></a> 高频的挤压 Artifacts</h2>
+<p>上图右侧的模型上出现了很多高频的挤压阴影。当估计 disk 距离着色位置很近时，其贡献的阴影权重会大幅上升，导致其效果过大而产生此类阴影。</p>
+<h1 id="一种鲁棒的算法"><a class="markdownIt-Anchor" href="#一种鲁棒的算法"></a> 一种鲁棒的算法</h1>
+<p>本节中介绍了一种鲁棒的解决方法，它在基础算法结构之上做出了几个关键改变以提高效果。</p>
+<h2 id="平滑不连续位置"><a class="markdownIt-Anchor" href="#平滑不连续位置"></a> 平滑不连续位置</h2>
+<center style="margin-bottom: 10px"><img src="12-3.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>由于无法保证对父节点的影响一定等效于对子节点计算影响而引入的不连续分界面可以通过强制平滑转换而解决。通过在分界面边缘引入一段过渡区域，在区域内同时计算父子节点的影响，并使用距离插值从而获得平滑的边界过渡，其代码如下：</p>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Compute shadow contribution from the current disk.    </span></span><br><span class="line"><span class="type">float</span> contribution = . . . </span><br><span class="line"><span class="comment">// Stop or descend?    </span></span><br><span class="line"><span class="keyword">if</span>(d2 &lt; tooClose * (<span class="number">1.0</span> + r)) &#123;   </span><br><span class="line">    <span class="comment">// Remember the parent&#x27;s contribution.   </span></span><br><span class="line">    parentContribution = contribution;   </span><br><span class="line">    <span class="comment">// Remember the parent&#x27;s area.   </span></span><br><span class="line">    parentArea = area;   </span><br><span class="line">    <span class="comment">// Compute parent&#x27;s weight: a simple linear blend.   </span></span><br><span class="line">    parentWeight = (d2 – (<span class="number">1.0</span> – r) * tooClose)/(<span class="number">2.0</span> * r * tooClose);   </span><br><span class="line">    <span class="comment">// Traverse deeper into hierarchy.   </span></span><br><span class="line">    . . . </span><br><span class="line">&#125; <span class="keyword">else</span> &#123;   </span><br><span class="line">    <span class="comment">// Compute the children&#x27;s weight.   </span></span><br><span class="line">    childrenWeight = <span class="number">1.0</span> – parentWeight;          </span><br><span class="line">    <span class="comment">// Blend contribution:   </span></span><br><span class="line">    <span class="comment">// Parent&#x27;s contribution is modulated by the ratio of the child&#x27;s area to its own.       </span></span><br><span class="line">    occlusion += childrenWeight * contribution;   </span><br><span class="line">    occlusion += parentWeight * parentContribution * (area/parentArea); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="去除挤压并增加细节"><a class="markdownIt-Anchor" href="#去除挤压并增加细节"></a> 去除挤压并增加细节</h2>
+<p>原始的算法使用 disk 表示顶点附近的几何结构，但这一做法在顶点周围的误差会非常大，而对于大曲率的位置，其结果就是巨大的阴影值了。为了解决这一问题，可以将 disk 的位置移动到面片的中点，同时在计算最细粒度的结构时直接使用解析解而避免这一情况。</p>
+<p>传统的全局光照技术早已对求解遮挡率的解析解有了研究：一个未被遮挡的几何体 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>A</mi></mrow><annotation encoding="application/x-tex">A</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">A</span></span></span></span> 对于法线为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">n</span></span></span></span> 的点 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">p</span></span></span></span> 的遮挡率为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>F</mi><mrow><mi>p</mi><mi>A</mi></mrow></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>π</mi></mrow></mfrac><munder><mo>∑</mo><mi>i</mi></munder><mi>n</mi><mo>⋅</mo><mfrac><mrow><msub><mi>e</mi><mi>i</mi></msub><mo>×</mo><msub><mi>v</mi><mi>i</mi></msub></mrow><mrow><mi mathvariant="normal">∣</mi><msub><mi>e</mi><mi>i</mi></msub><mo>×</mo><msub><mi>v</mi><mi>i</mi></msub><mi mathvariant="normal">∣</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">F_{pA} = {1 \over 2\pi}\sum_i n\cdot{e_i \times v_i \over |e_i \times v_i|}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.969438em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.328331em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">p</span><span class="mord mathdefault mtight">A</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.599109em;vertical-align:-1.277669em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span><span class="mord mathdefault" style="margin-right:0.03588em;">π</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0500050000000003em;"><span style="top:-1.872331em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span><span style="top:-3.050005em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">n</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:2.19633em;vertical-align:-0.936em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.2603300000000002em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">∣</span><span class="mord"><span class="mord mathdefault">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></span></p>
+<center style="margin-bottom: 10px"><img src="12-4.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>在实际使用时，还需要使用由目标点和法线构成的切平面裁剪出可视的部分进行计算，最终的结果往往是一个 quad ：</p>
+<center style="margin-bottom: 10px"><img src="12-5.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> visibleQuad(float3 p,</span><br><span class="line">                 float3 n, </span><br><span class="line">                 float3 v0, </span><br><span class="line">                 float3 v1, </span><br><span class="line">                 float3 v2, </span><br><span class="line">             <span class="keyword">out</span> float3 q0, </span><br><span class="line">             <span class="keyword">out</span> float3 q1, </span><br><span class="line">             <span class="keyword">out</span> float3 q2, </span><br><span class="line">             <span class="keyword">out</span> float3 q3) &#123;   </span><br><span class="line">    <span class="keyword">const</span> <span class="type">float</span> epsilon = <span class="number">1e-6</span>;   </span><br><span class="line">    <span class="type">float</span> d = <span class="built_in">dot</span>(n, p);   </span><br><span class="line">    <span class="comment">// Compute the signed distances from the vertices to the plane.    </span></span><br><span class="line">    <span class="type">float</span> sd[<span class="number">3</span>]; sd[<span class="number">0</span>] = <span class="built_in">dot</span>(n, v0) – d;   </span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">abs</span>(sd[<span class="number">0</span>]) &lt;= epsilon) sd[<span class="number">0</span>] = <span class="number">0.0</span>;   </span><br><span class="line">    sd[<span class="number">1</span>] = <span class="built_in">dot</span>(n, v1) – d;   </span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">abs</span>(sd[<span class="number">1</span>]) &lt;= epsilon) sd[<span class="number">1</span>] = <span class="number">0.0</span>;   </span><br><span class="line">    sd[<span class="number">2</span>] = <span class="built_in">dot</span>(n, v2) – d;   </span><br><span class="line">    <span class="keyword">if</span>(<span class="built_in">abs</span>(sd[<span class="number">2</span>]) &lt;= epsilon) sd[<span class="number">2</span>] = <span class="number">0.0</span>;   </span><br><span class="line">    <span class="comment">// Determine case.    </span></span><br><span class="line">    <span class="keyword">if</span>(sd[<span class="number">0</span>] &gt; <span class="number">0.0</span>) &#123;     </span><br><span class="line">        <span class="keyword">if</span>(sd[<span class="number">1</span>] &gt; <span class="number">0.0</span>) &#123;       </span><br><span class="line">            <span class="keyword">if</span>(sd[<span class="number">2</span>] &lt; <span class="number">0.0</span>) &#123;         </span><br><span class="line">                <span class="comment">// v0, v1 above, v2 under         </span></span><br><span class="line">                q0 = v0;         </span><br><span class="line">                q1 = v1;         </span><br><span class="line">                <span class="comment">// Evaluate ray-plane equations:         </span></span><br><span class="line">                q2 = v1 + (sd[<span class="number">1</span>]/(sd[<span class="number">1</span>] - sd[<span class="number">2</span>])) * (v2 - v1);         </span><br><span class="line">                q3 = v0 + (sd[<span class="number">0</span>]/(sd[<span class="number">0</span>] - sd[<span class="number">2</span>])) * (v2 - v0);       </span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;         </span><br><span class="line">                <span class="comment">// v0, v1, v2 all above         </span></span><br><span class="line">                q0 = v0;         </span><br><span class="line">                q1 = v1;         </span><br><span class="line">                q2 = v2;         </span><br><span class="line">                q3 = q3;       </span><br><span class="line">            &#125;     </span><br><span class="line">        &#125;   </span><br><span class="line">    &#125;   </span><br><span class="line">    <span class="comment">// Other cases similarly   . . .</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="结果对比"><a class="markdownIt-Anchor" href="#结果对比"></a> 结果对比</h1>
+<h2 id="渲染结果"><a class="markdownIt-Anchor" href="#渲染结果"></a> 渲染结果</h2>
+<center style="margin-bottom: 10px"><img src="12-6.png" style="max-width: 16vw; margin: 10px 0"/></center>
+<center style="margin-bottom: 10px"><img src="12-7.png" style="max-width: 16vw; margin: 10px 0"/></center>
+<p>可以看出，对于密集且平滑的 bunny 模型，旧有方法表现尚可，但对于具有很大的细节差异的汽车模型而言结果就不那么好了。</p>
+<h2 id="性能表现"><a class="markdownIt-Anchor" href="#性能表现"></a> 性能表现</h2>
+<p>上述两个场景的参数如下：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>n_triangles</th>
+<th>n_fragments</th>
+<th>n_disks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bunny</td>
+<td>69,451</td>
+<td>381,046</td>
+<td>138,901</td>
+</tr>
+<tr>
+<td>car</td>
+<td>29,304</td>
+<td>395,613</td>
+<td>58,607</td>
+</tr>
+</tbody>
+</table>
+<p>性能如下：</p>
+<center style="margin-bottom: 10px"><img src="12-8.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<p>在每个像素上使用鲁棒性算法的效率和在顶点上使用原有算法的性能相近，约比在像素上使用原有算法慢一倍出头。</p>
+<h1 id="注意事项"><a class="markdownIt-Anchor" href="#注意事项"></a> 注意事项</h1>
+<p>由于本算法本身仍然是一个近似算法，且无法完全地去除所有的不连续性，本文提出了数种方法辅助得到需要的艺术效果。</p>
+<h2 id="强制收敛"><a class="markdownIt-Anchor" href="#强制收敛"></a> 强制收敛</h2>
+<p>这种算法在估计 disk 的贡献时会使用一种迭代式的方法，但它在实践中并不一定会收敛，例如建筑场景往往会在两种过亮和过暗的场景之间反复切换。为了解决这一问题，本算法会在前数次迭代后将 AO 值限制为使用前两次迭代中较小的那个，或者在其中之间进行插值。代码和效果如下：</p>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> o0 = texture2DRect(occlusion0, diskLocation).x; </span><br><span class="line"><span class="type">float</span> o1 = texture2DRect(occlusion1, diskLocation).x; </span><br><span class="line"><span class="type">float</span> m = <span class="built_in">min</span>(o0, o1); </span><br><span class="line"><span class="type">float</span> M = <span class="built_in">max</span>(o0, o1); </span><br><span class="line"><span class="comment">// weighted blend </span></span><br><span class="line">occlusion = minScale * m + maxScale * M;</span><br></pre></td></tr></table></figure>
+<center style="margin-bottom: 10px"><img src="12-9.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<h2 id="可调参数"><a class="markdownIt-Anchor" href="#可调参数"></a> 可调参数</h2>
+<p>我们注意到，本算法常常倾向于过度估计 AO 的程度。我们需要一个函数以控制 AO 在不同距离处的衰减，让近处的投影物可以造成高对比度的影响，而远处的投影物又不至于完全遮蔽光源。此处引入了两个可调参数：</p>
+<h3 id="距离衰减"><a class="markdownIt-Anchor" href="#距离衰减"></a> 距离衰减</h3>
+<p>这个参数控制了随距离变化各类 disk 对 AO 贡献值大小的衰减：</p>
+<center style="margin-bottom: 10px"><img src="12-10.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Compute the occlusion contribution from an element </span></span><br><span class="line">contribution = solidAngle(. . .); </span><br><span class="line"><span class="comment">// Attenuate by distance </span></span><br><span class="line">contribution /= (<span class="number">1.0</span> + distanceAttenuation * e2);</span><br></pre></td></tr></table></figure>
+<h3 id="三角形衰减"><a class="markdownIt-Anchor" href="#三角形衰减"></a> 三角形衰减</h3>
+<p>这个参数控制了在最细粒度下附近的三角形带来的遮蔽衰减：</p>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Get the triangle&#x27;s occlusion.    </span></span><br><span class="line"><span class="type">float</span> elementOcclusion = . . . </span><br><span class="line"><span class="comment">// Compute the point-to-triangle form factor. </span></span><br><span class="line">contribution = computeFormFactor(. . .); </span><br><span class="line"><span class="comment">// Modulate by its occlusion raised to a power. </span></span><br><span class="line">contribution *= <span class="built_in">pow</span>(elementOcclusion, triangleAttenuation);</span><br></pre></td></tr></table></figure>
+<p>更小的参数可以强化细节三角形的影响，而更大的参数则会减弱大型三角形的影响，以防它们实际上被遮挡住了。</p>
+<h1 id="future-work"><a class="markdownIt-Anchor" href="#future-work"></a> Future Work</h1>
+<p>本节提出了一种稳定的 GPU 加速算法以计算高质量的环境光遮蔽效果。更进一步地，这种算法并不只能用于环境光遮蔽的计算中，实际上他可以被用于计算间接光照，如次表面散射可以使用同样的层次结构加速计算。简单地修改代码和 disk 中储存的值即可得到计算多次散射的间接光照的方法：</p>
+<center style="margin-bottom: 10px"><img src="12-11.png" style="max-height: 40vh; margin: 10px 0"/></center>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">float3 multipleScattering(<span class="type">float</span> d2, </span><br><span class="line">                          float3 zr,     <span class="comment">// Scattering parameters </span></span><br><span class="line">                          float3 zv,     <span class="comment">// defined in    </span></span><br><span class="line">                          float3 sig_tr) <span class="comment">// Jensen and Buhler 2002 </span></span><br><span class="line">&#123;   </span><br><span class="line">    float3 r2  = float3(d2, d2, d2);   </span><br><span class="line">    float3 dr1 = rsqrt(r2 + (zr * zr));   </span><br><span class="line">    float3 dv1 = rsqrt(r2 + (zv * zv));   </span><br><span class="line">    float3 C1  = zr * (sig_tr + dr1);   </span><br><span class="line">    float3 C2  = zv * (sig_tr + dv1);   </span><br><span class="line">    float3 dL  = C1 * <span class="built_in">exp</span>(-sig_tr/dr1) * dr1 * dr1;          </span><br><span class="line">    dL += C2 * <span class="built_in">exp</span>(-sig_tr/dv1) * dv1 * dv1;   </span><br><span class="line">    <span class="keyword">return</span> dL; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/" title="《GPU Gem3》第十二章笔记 - AO | Notes for GPU Gems 3 Chapter 12 - High-Quality Ambient Occlusion" target="_blank" rel="external">https://blog.apassbydreg.work/2022/03/GPUGems3-ch12/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../GPP-ch03/" title="《游戏编程模式》第三章笔记 | Notes for Game Programming Patterns Chapter 03"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../GPP-ch02/" title="《游戏编程模式》第二章笔记 | Notes for Game Programming Patterns Chapter 02"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

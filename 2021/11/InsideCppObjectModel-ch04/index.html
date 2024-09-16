@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>《深度探索C++对象模型》第四章笔记 | Notes for Inside Cpp Object Model Chapter 04 | Blog of Martin Z He</title>
+  <meta name="description" content="4.1 Member 的各种调用方式  Nonstatic Member Functions C++ 的设计准则就是让 nonstatic member functions 的开销和一般的函数完全相同，它不会带来任何额外负担，因为编译器内部会将该函数实体转化为对等的 nonmember 函数实体。转化的步骤在于：  改写函数原型，增加一个额外的 this 指针，如果这个函数有 const 修饰符">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《深度探索C++对象模型》第四章笔记 | Notes for Inside Cpp Object Model Chapter 04">
+<meta property="og:url" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="4.1 Member 的各种调用方式  Nonstatic Member Functions C++ 的设计准则就是让 nonstatic member functions 的开销和一般的函数完全相同，它不会带来任何额外负担，因为编译器内部会将该函数实体转化为对等的 nonmember 函数实体。转化的步骤在于：  改写函数原型，增加一个额外的 this 指针，如果这个函数有 const 修饰符">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/vtbl.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/func-efficiency.png">
+<meta property="og:image" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/fptr-efficiency.png">
+<meta property="article:published_time" content="2021-11-01T13:52:35.000Z">
+<meta property="article:modified_time" content="2021-11-04T14:21:47.857Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="深度探索C++对象模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/vtbl.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">45</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/GameLogic/" style="font-size: 13px;">GameLogic</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.14px;">Unity</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-Archive/" class="title">《游戏编程模式》笔记合集 | Notes Collection for Game Programming Patterns</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:25:38.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/04/GPP-ch05/" class="title">《游戏编程模式》第五章笔记 | Notes for Game Programming Patterns Chapter 05</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-04-18T16:22:12.000Z" itemprop="datePublished">2022-04-19</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#41-member-%E7%9A%84%E5%90%84%E7%A7%8D%E8%B0%83%E7%94%A8%E6%96%B9%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text"> 4.1 Member 的各种调用方式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#nonstatic-member-functions"><span class="toc-number">1.1.</span> <span class="toc-text"> Nonstatic Member Functions</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#virtual-member-functions"><span class="toc-number">1.2.</span> <span class="toc-text"> Virtual Member Functions</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#static-member-functions"><span class="toc-number">1.3.</span> <span class="toc-text"> Static Member Functions</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#42-virtual-member-functions"><span class="toc-number">2.</span> <span class="toc-text"> 4.2 Virtual Member Functions</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E6%80%81%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">2.1.</span> <span class="toc-text"> 多态的表示</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B4%BE%E7%94%9F%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.</span> <span class="toc-text"> 派生的实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E7%BB%A7%E6%89%BF%E4%B8%8B%E7%9A%84%E8%99%9A%E5%87%BD%E6%95%B0"><span class="toc-number">2.3.</span> <span class="toc-text"> 多继承下的虚函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E7%BB%A7%E6%89%BF%E4%B8%8B%E7%9A%84%E8%99%9A%E5%87%BD%E6%95%B0"><span class="toc-number">2.4.</span> <span class="toc-text"> 虚继承下的虚函数</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#43-%E5%87%BD%E6%95%B0%E7%9A%84%E6%95%88%E7%8E%87"><span class="toc-number">3.</span> <span class="toc-text"> 4.3 函数的效率</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#44-%E6%8C%87%E5%90%91-member-function-%E7%9A%84%E6%8C%87%E9%92%88"><span class="toc-number">4.</span> <span class="toc-text"> 4.4 指向 Member Function 的指针</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%95%E7%BB%A7%E6%89%BF%E4%B8%8B%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">4.1.</span> <span class="toc-text"> 单继承下的情况</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E7%BB%A7%E6%89%BF%E4%B8%8B%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">4.2.</span> <span class="toc-text"> 多继承下的情况</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%88%90%E5%91%98%E5%87%BD%E6%95%B0%E6%8C%87%E9%92%88%E7%9A%84%E6%95%88%E7%8E%87"><span class="toc-number">4.3.</span> <span class="toc-text"> 成员函数指针的效率</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#45-inline-functions"><span class="toc-number">5.</span> <span class="toc-text"> 4.5 Inline Functions</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#inline-%E5%87%BD%E6%95%B0%E7%9A%84%E5%BD%A2%E5%BC%8F%E5%8F%82%E6%95%B0%E7%AE%A1%E7%90%86"><span class="toc-number">5.1.</span> <span class="toc-text"> inline 函数的形式参数管理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#inline-%E5%87%BD%E6%95%B0%E7%9A%84%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F%E7%AE%A1%E7%90%86"><span class="toc-number">5.2.</span> <span class="toc-text"> inline 函数的局部变量管理</span></a></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-InsideCppObjectModel-ch04" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      《深度探索C++对象模型》第四章笔记 | Notes for Inside Cpp Object Model Chapter 04
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2021-11-01T13:52:35.000Z" itemprop="datePublished">2021-11-01</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/reading-notes/">reading notes</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/C/" rel="tag">C++</a>, <a class="article-tag-link-link" href="../../../tags/OOP/" rel="tag">OOP</a>, <a class="article-tag-link-link" href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" rel="tag">深度探索C++对象模型</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 3.2k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 11 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="41-member-的各种调用方式"><a class="markdownIt-Anchor" href="#41-member-的各种调用方式"></a> 4.1 Member 的各种调用方式</h1>
+<h2 id="nonstatic-member-functions"><a class="markdownIt-Anchor" href="#nonstatic-member-functions"></a> Nonstatic Member Functions</h2>
+<p>C++ 的设计准则就是让 nonstatic member functions 的开销和一般的函数完全相同，它不会带来任何额外负担，因为编译器内部会将该函数实体转化为对等的 nonmember 函数实体。转化的步骤在于：</p>
+<ol>
+<li>改写函数原型，增加一个额外的 <code>this</code> 指针，如果这个函数有 <code>const</code> 修饰符，则指针也需要有该修饰符</li>
+<li>将该函数重写成一个外部函数，并对函数的名称进行「mangling」处理，使它变成独一无二的词语</li>
+<li>改写每个这个函数的调用操作</li>
+</ol>
+<p>对于函数名称的改写方式在各个编译器中并没有统一的方式，其中一种可能的做法是在函数名前面添加类名和、参数列表的信息</p>
+<h2 id="virtual-member-functions"><a class="markdownIt-Anchor" href="#virtual-member-functions"></a> Virtual Member Functions</h2>
+<p>一个通过多态调用的虚成员函数需要进行运行时确定调用的函数体，一般是从 vtbl 中对应的 slot 位置找到该函数对应的指针再进行函数调用操作。对于虚函数中对于其它虚函数的调用，由于在分析出虚函数调用来自的实体的时候就已经掌握了对应的类型信息，因此并不需要额外的运行时开销。</p>
+<p>另一方面，直接从实体调用的虚成员函数也不需要从 vtbl 中取地址，它绑定的实体在编译期间即可确定。编译器会以对待普通 nonstatic member functions 的方式处理这些函数。</p>
+<h2 id="static-member-functions"><a class="markdownIt-Anchor" href="#static-member-functions"></a> Static Member Functions</h2>
+<p>在引入 static member functions 之前，C++ 要求所有 member functions 均需要经由对应的 class object 调用。而实际上只有当一个或多个 nonstatic data members 在函数中被使用的时候才需要一个 class object。当没有任何 nonstatic member 被使用时，该函数中的 <code>this</code> 也就没有了作用（但 C++ 不能识别这个情况）。</p>
+<p>这样的话，若是一个 static member 被声明为 nonpublic ，它的存取就不得不通过一个 member function 来实现。在过去，可能会出现一些奇怪的代码：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">((ClassType *) <span class="number">0</span>)-&gt;<span class="built_in">get_object_cnt</span>();</span><br></pre></td></tr></table></figure>
+<p>static member functions 便是用于解决这种问题。它的主要特性就是不含 <code>this</code> 指针，因此就拥有了一系列次要特性：</p>
+<ol>
+<li>不能直接存取 nonstatic members</li>
+<li>不能被声明为 <code>const, volatile, virtual</code></li>
+<li>不需要经过 class object 调用</li>
+</ol>
+<p>nonstatic 函数由于缺乏 <code>this</code> 指针，使它拥有了一些意想不到的好处：可以作为 callback 函数，或是应用在线程函数上。</p>
+<h1 id="42-virtual-member-functions"><a class="markdownIt-Anchor" href="#42-virtual-member-functions"></a> 4.2 Virtual Member Functions</h1>
+<p>本节中深入探究了 vtbl 模型。</p>
+<h2 id="多态的表示"><a class="markdownIt-Anchor" href="#多态的表示"></a> 多态的表示</h2>
+<p>为了支持 virtual function 机制，必须要能够对多态对象有某种执行期的类型判断方法。</p>
+<p>第一种解决方案是直接把必要的信息加在指针上，使它包括了参考的对象地址以及其对象类型的某种编码或结构。这个方法带来了两个问题，一是程序即使不使用多态也会增加空间负担，另一方面它也不能与 C 程序之间链接兼容。</p>
+<p>第二种方法即将必要信息放在对象本身中，但一个结构是否需要那些额外的信息则是一件非常难以判断的事情。这会造成类内存的膨胀以及丧失与 C 接口的兼容性。为了判断哪些类型需要什么信息，需要一个更好的规范以判断在何时需要放入哪些信息：</p>
+<ol>
+<li>
+<p>信息的用途：在 C++ 中，多态表示了以一个基类的指针寻址出一个派生类的对象的意思。然而对于多态的使用，又有着不同的要求：</p>
+ <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Base *ptr;</span><br><span class="line"><span class="comment">// 这种使用方法可以通过对 virtual function call 的 resolve 完成</span></span><br><span class="line">ptr-&gt;<span class="built_in">function</span>();</span><br><span class="line"><span class="comment">// 这种使用方法需要 runtime type identification (RTTI) 的支持</span></span><br><span class="line"><span class="keyword">if</span> (Derived *dptr = <span class="keyword">dynamic_cast</span>&lt;Derived&gt;(ptr))</span><br><span class="line">&#123;</span><br><span class="line">		dptr-&gt;member++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>信息的内容：为了正确的实现多态，运行期间需要直到的信息包括了指针指向的变量的真实类型，以及对应的实体的位置。由此需要一个 vtbl 的机制，在 class object 中安插指向 vptr 指向虚函数表，并给每个对应的函数指派一个固定的 vtbl 索引值。一个类中的 vtbl 的内容包括了：</p>
+<ol>
+<li>这个类中定义的函数实体，它可能重载了一个 base class virtual function</li>
+<li>继承自 base class 的没有被重写的函数实体</li>
+<li>纯虚函数的实体（一般会统一指向一个异常函数如 <code>pure_virtual_function_called()</code> ）</li>
+</ol>
+</li>
+</ol>
+<h2 id="派生的实现"><a class="markdownIt-Anchor" href="#派生的实现"></a> 派生的实现</h2>
+<p>当一个含有虚函数表的类型被作为基类单派生后，新的函数可能有以下几种可能：</p>
+<ol>
+<li>继承了基类的虚函数实体，对应的函数地址会被拷贝到派生类虚表的对应位置</li>
+<li>使用自己重载的函数实体，将新的函数地址覆盖虚表的对应位置</li>
+<li>增加新的虚函数，此时虚表的尺寸也会增加以存放新的函数地址</li>
+</ol>
+<p>在单派生链中，每一个虚函数在重载前后都存在于虚表的同一个偏移位置处，这是非常直观且运行良好的，然而一旦引入了多继承和虚拟继承，对虚函数的支持就不那么好了。</p>
+<h2 id="多继承下的虚函数"><a class="markdownIt-Anchor" href="#多继承下的虚函数"></a> 多继承下的虚函数</h2>
+<p>在多重继承中支持虚函数的复杂度主要围绕在第二个以及后续的基类上，以及必须在执行期间调整 this 指针这一点。</p>
+<p>在多重继承之下，每个 n 重继承的派生类都会有 n 个虚函数表（单一继承如上所述不会产生额外的虚函数表）。对于每一个虚函数表，派生对象中都会有对应的 vptr 一种可能的布局如下图所示：</p>
+<center><img src="vtbl.png" style="max-height: 50vh; margin: 10px 0;"/></center>
+<p>有三种情况，第二个或者后续的基类会影响对虚函数的支持，这在上图中用三个 * 号表示：</p>
+<ol>
+<li>
+<p>通过一个指向第二个基类的指针调用派生类重载后的虚函数</p>
+</li>
+<li>
+<p>通过指向派生类的指针调用未被重载的第二个或之后的基类中的虚函数</p>
+</li>
+<li>
+<p>在 C++ 语言扩充性质下，允许一个虚函数的返回值发生变化，可能是 base type 也可能是 public derived type ：</p>
+ <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Base2 *pb = <span class="keyword">new</span> Derived;</span><br><span class="line"><span class="comment">// 此时返回的是 Derived::clone() ，它重载了两个基类中的虚函数</span></span><br><span class="line">Base2 *_pb = pb-&gt;<span class="built_in">clone</span>();</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="虚继承下的虚函数"><a class="markdownIt-Anchor" href="#虚继承下的虚函数"></a> 虚继承下的虚函数</h2>
+<p>当一个派生类从一个基类虚拟派生而来时，即使只是单一继承，其基类对象在派生类中都是未知的，需要在运行期决议并调整对应的 <code>this</code> 函数指针。</p>
+<p>当一个 virtual base class 从另一个 virtual base class 中派生而来且二者都有 virtual functions 和 nonstatic data members 是，编译器对于它的支持将会变得极端复杂且诡异。最简单的方式就是不要再 virtual base class 中声明任何 nonstatic data member （和有实体的 nonstatic function）</p>
+<h1 id="43-函数的效率"><a class="markdownIt-Anchor" href="#43-函数的效率"></a> 4.3 函数的效率</h1>
+<p>使用类似以下的方法测试不同种类的函数的效率：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// nonmember function 实例</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">cross_product</span><span class="params">(<span class="keyword">const</span> Point3d &amp;pA, <span class="keyword">const</span> Point3d &amp;pB)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">		Point3d pC;</span><br><span class="line">		<span class="comment">/* ... */</span></span><br><span class="line">		<span class="keyword">return</span> pC;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">		Point3d pA, pB;</span><br><span class="line">		<span class="comment">/* ... */</span></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> iters = <span class="number">0</span>; iters &lt; <span class="number">1e7</span>; iters++)</span><br><span class="line">		&#123;</span><br><span class="line">				<span class="comment">// nonmember function 实例</span></span><br><span class="line">				<span class="built_in">cross_product</span>(pA, pB);</span><br><span class="line">		&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<center><img src="func-efficiency.png" style="max-height: 50vh; margin: 10px 0;"/></center>
+<p>需要注意的地方有几个：</p>
+<ol>
+<li>inline 函数不止能节省一般函数调用带来的额外负担，还能提供给程序额外的优化机会</li>
+<li>多重继承增加的时间消耗实际上源于函数中初始化返回值用的那个点的 constructor 处理了更多的虚拟函数相关的信息。</li>
+</ol>
+<h1 id="44-指向-member-function-的指针"><a class="markdownIt-Anchor" href="#44-指向-member-function-的指针"></a> 4.4 指向 Member Function 的指针</h1>
+<p>在上一章中曾经讲到，取一个类中 nonstatic data member 的地址实际上得到的是它在类内布局中的字节位置（有时需要加一）。它是一个不完整的值，必须绑定在某个 class object 的地址上才能被存取。一个指向 nonstatic member function 的指针的性质也与此相似，必须绑定于特定的 class object 的地址上（因为需要 <code>this</code> 指针），而 static member function 则不需要。</p>
+<h2 id="单继承下的情况"><a class="markdownIt-Anchor" href="#单继承下的情况"></a> 单继承下的情况</h2>
+<p>对于一个指向非虚函数的指针，得到的将会是它在内存中的直接地址。而对于指向虚函数的指针，得到的则是该函数在虚函数表中的索引值（有时需要加一）。但这会导致函数指针的二义性，当普通函数和虚函数具有同样的参数列表和返回值时，可能会出现内容的冲突。多重继承的引入提出了更加一般的实现方式的需要，顺势解决了这个问题。</p>
+<h2 id="多继承下的情况"><a class="markdownIt-Anchor" href="#多继承下的情况"></a> 多继承下的情况</h2>
+<p>为了能让指向成员函数的指针也可以支持多继承和虚拟继承，Stroustrup 中设计了如下的结构体记录函数指针信息：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">mptr</span> &#123;</span></span><br><span class="line">		<span class="keyword">int</span> delta; <span class="comment">// this 指针使用时需要的偏移值</span></span><br><span class="line">		<span class="keyword">int</span> index; <span class="comment">// vtbl 中的函数位置索引，为 -1 时表示不指向 vtbl</span></span><br><span class="line">		<span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">				__ptrtofunc faddr; <span class="comment">// 内存中的函数指针</span></span><br><span class="line">				<span class="keyword">int</span> v_offset;      <span class="comment">// 多继承或者虚拟继承中的 vptr 位置</span></span><br><span class="line">		&#125;；</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h2 id="成员函数指针的效率"><a class="markdownIt-Anchor" href="#成员函数指针的效率"></a> 成员函数指针的效率</h2>
+<center><img src="fptr-efficiency.png" style="max-height: 50vh; margin: 10px 0;"/></center>
+<h1 id="45-inline-functions"><a class="markdownIt-Anchor" href="#45-inline-functions"></a> 4.5 Inline Functions</h1>
+<p>考虑一个点的加法运算：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Point <span class="keyword">operator</span>+(<span class="keyword">const</span> Point &amp;pt1, <span class="keyword">const</span> Point &amp;pt2)</span><br><span class="line">&#123;</span><br><span class="line">		Point new_pt;</span><br><span class="line">		new_pt._x = pt1._x + pt2._x;</span><br><span class="line">		<span class="comment">/* ... */</span></span><br><span class="line">		<span class="keyword">return</span> new_pt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>理论上，使用 inline 函数完成 get 和 set 能让系统变得更加干净：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Point::x</span><span class="params">(<span class="keyword">float</span> x)</span> </span>&#123; _x = x; &#125;</span><br><span class="line"><span class="function"><span class="keyword">float</span> <span class="title">Point::x</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> _x; &#125;</span><br><span class="line"></span><br><span class="line">new_pt.<span class="built_in">x</span>(pt1.<span class="built_in">x</span>() + pt2.<span class="built_in">x</span>());</span><br></pre></td></tr></table></figure>
+<p>inline 函数的引用可以将其后可能因为在继承体系中的位移等改变带来的 data members 的变化最小化，同时保持和原有写法一样高的效率。另一方面，这个加法函数也不需要声明为原函数的一个 friend 了。</p>
+<p>然而实际上 C++ 中的 inline 关键字并不是强制要求，它只是一个请求。如果编译器认为该函数无法被合理的扩展（即执行成本不比普通函数调用低），他就不会将函数 inline 化。对于执行成本的估计，通常是用函数中计算 assignments、function calls、virtual function calls 等操作的加权次数统计得到的。</p>
+<p>一般而言，处理一个 inline 函数有两个阶段：</p>
+<ol>
+<li>
+<p>分析函数的定义。如果函数因为其复杂度或者构建问题被判断为不可以成为 inline ，它则会被转化为一个 static 函数，并在被编译的模块内产生对应的函数定义。</p>
+</li>
+<li>
+<p>真正的 inline 函数扩展操作发生在它被调用的时刻，着会带来参数求值和临时对象管理的问题。在扩展点上，编译器同样会判断这个调用是否不需要成为 inline 调用。需要注意的是，如果 inline 函数只有一个表达式，那么它第二个或者更加往后的调用方式就不会被扩展开。上述的第二种写法中的调用会被扩展为及其丑陋的代码：</p>
+ <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">new_pt.x= pt1._x + <span class="built_in">x__5PointFV</span>(&amp;pt2);</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="inline-函数的形式参数管理"><a class="markdownIt-Anchor" href="#inline-函数的形式参数管理"></a> inline 函数的形式参数管理</h2>
+<p>在 inline 扩展期间，每个形参都会被实际参数所替代。然而，并不能简单地直接将所有形参替换为传入的表达式，因为这可能导致对实际参数额外的求值操作。一般而言，这些可能导致副作用的实参均需要引入临时变量代替。</p>
+<p>如：inline 函数调用 <code>func(1, foo(), bar() + 3);</code> 的后两项就会在编译期替换为临时变量。</p>
+<h2 id="inline-函数的局部变量管理"><a class="markdownIt-Anchor" href="#inline-函数的局部变量管理"></a> inline 函数的局部变量管理</h2>
+<p>一般而言，inline 函数中点每个局部变量都必须放在函数调用的一个封闭区间内，并拥有独一无二的名称。</p>
+<p>当 inline 函数以分离的表达式的形式被扩展多次时，一般只需要一组局部变量，然而当它在单个表达式中多次使用并扩展时，每一次扩展都需要自己的局部变量。这些额外的局部变量和上一节中用来替换有副作用的实参的临时变量可能会导致大量临时性对象的产生，从而使程序的大小暴增。</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/" title="《深度探索C++对象模型》第四章笔记 | Notes for Inside Cpp Object Model Chapter 04" target="_blank" rel="external">https://blog.apassbydreg.work/2021/11/InsideCppObjectModel-ch04/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    <li class="prev">
+      <a href="../PBRT-ch05/" title="PBRT 第五章笔记 | Notes for PBRT Chapter 05 - Color and Radiometry"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;Newer</span></a>
+    </li>
+    
+    
+    <li class="next">
+      <a href="../UnitySmoothFollowingCamera/" title="Unity 里的平滑跟踪相机 | Smooth Following Camera in Unity"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
