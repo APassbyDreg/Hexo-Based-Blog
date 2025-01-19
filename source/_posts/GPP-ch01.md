@@ -20,7 +20,7 @@ toc: true
 
 ## 享元模式
 
-<embed src="./享元模式 · Design Patterns Revisited · 游戏设计模式.pdf" type="application/pdf" width="100%" height="600px">
+<embed src="./享元模式 · Design Patterns Rehrvisited · 游戏设计模式.pdf" type="application/pdf" width="100%" height="600px">
 
 ## 观察者模式
 

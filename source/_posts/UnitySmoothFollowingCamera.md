@@ -6,7 +6,7 @@ categories:
 - gamedev
 tags:
 - Unity
-- GameLogic
+- game logic
 toc: true
 ---
 
