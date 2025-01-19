@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>初探 Unity Ray Tracing 管线基础 | Intro To Unity Ray Tracing Pipeline Basics | Blog of Martin Z He</title>
+  <meta name="description" content="Unity 里边很早就已经支持了光线追踪相关的功能，但是我找了半天都没能找到一个完整一点的入门教程，在此斗胆抛砖引玉，希望看到这里的好兄弟日后发达了之后别忘了小弟。 本文在 Unity HDRP 的基础上实现了一个极简的光线追踪流程（其实并不强依赖 HDRP ，URP 也行）以让大伙能对 Unity Ray Tracing 管线有一个初步的了解，所覆盖的内容可能有所缺漏，日后或许会慢慢填坑。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初探 Unity Ray Tracing 管线基础 | Intro To Unity Ray Tracing Pipeline Basics">
+<meta property="og:url" content="https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/">
+<meta property="og:site_name" content="Blog of Martin Z He">
+<meta property="og:description" content="Unity 里边很早就已经支持了光线追踪相关的功能，但是我找了半天都没能找到一个完整一点的入门教程，在此斗胆抛砖引玉，希望看到这里的好兄弟日后发达了之后别忘了小弟。 本文在 Unity HDRP 的基础上实现了一个极简的光线追踪流程（其实并不强依赖 HDRP ，URP 也行）以让大伙能对 Unity Ray Tracing 管线有一个初步的了解，所覆盖的内容可能有所缺漏，日后或许会慢慢填坑。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/correct.png">
+<meta property="og:image" content="https://d29g4g2dyqv443.cloudfront.net/sites/default/files/pictures/2018/dx12_rtx_tutorial/Images/ShaderPipeline.svg">
+<meta property="og:image" content="https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/wierd-error.png">
+<meta property="article:published_time" content="2025-01-17T08:29:06.000Z">
+<meta property="article:modified_time" content="2025-01-19T08:45:03.868Z">
+<meta property="article:author" content="Martin Z He">
+<meta property="article:tag" content="Unity">
+<meta property="article:tag" content="ray tracing">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/correct.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Blog of Martin Z He" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="../../../css/style.css">
+
+  
+  
+  
+  
+
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2879374_3afzfoui6w8.css">
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/APassbyDreg" target="_blank">
+          <img class="img-circle" src="../../../images/avatar.png" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">Martin Z He</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">咕咕咕</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="Search" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="Type something..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav menu-highlight">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="../../../.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">Home</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="../../../archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">Archives</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="../../../categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">Categories</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="../../../tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">Tags</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="../../../repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">Repository</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="../../../about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">About</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">Board</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>咕！咕咕咕！！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/">programming</a><span class="category-list-count">47</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/gamedev/">gamedev</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/presentation-notes/">presentation notes</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/projects/">projects</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="../../../categories/programming/reading-notes/">reading notes</a><span class="category-list-count">37</span></li></ul></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget-body tagcloud">
+      <a href="../../../tags/C/" style="font-size: 13.57px;">C++</a> <a href="../../../tags/CG/" style="font-size: 14px;">CG</a> <a href="../../../tags/CUDA/" style="font-size: 13px;">CUDA</a> <a href="../../../tags/FX/" style="font-size: 13px;">FX</a> <a href="../../../tags/GDC-talks/" style="font-size: 13px;">GDC talks</a> <a href="../../../tags/GPU-Gems-3/" style="font-size: 13.29px;">GPU Gems 3</a> <a href="../../../tags/GPU-Programming/" style="font-size: 13px;">GPU Programming</a> <a href="../../../tags/GTC/" style="font-size: 13px;">GTC</a> <a href="../../../tags/Game-Programming-Patterns/" style="font-size: 13.43px;">Game Programming Patterns</a> <a href="../../../tags/OBR/" style="font-size: 13.29px;">OBR</a> <a href="../../../tags/OOP/" style="font-size: 13.71px;">OOP</a> <a href="../../../tags/PBRT/" style="font-size: 13.86px;">PBRT</a> <a href="../../../tags/RTR/" style="font-size: 13px;">RTR</a> <a href="../../../tags/Unity/" style="font-size: 13.29px;">Unity</a> <a href="../../../tags/UnrealEngine/" style="font-size: 13px;">UnrealEngine</a> <a href="../../../tags/game-logic/" style="font-size: 13px;">game logic</a> <a href="../../../tags/ray-tracing/" style="font-size: 13px;">ray tracing</a> <a href="../../../tags/render/" style="font-size: 14px;">render</a> <a href="../../../tags/visualization/" style="font-size: 13.14px;">visualization</a> <a href="../../../tags/web/" style="font-size: 13.14px;">web</a> <a href="../../../tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/" style="font-size: 13.57px;">深度探索C++对象模型</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Archive</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2025/01/">January 2025</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2024/12/">December 2024</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/05/">May 2022</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/04/">April 2022</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/03/">March 2022</a><span class="archive-list-count">6</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/02/">February 2022</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2022/01/">January 2022</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/12/">December 2021</a><span class="archive-list-count">7</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/11/">November 2021</a><span class="archive-list-count">12</span></li><li class="archive-list-item"><a class="archive-list-link" href="../../../archives/2021/10/">October 2021</a><span class="archive-list-count">10</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/gamedev/">gamedev</a>
+              </p>
+              <p class="item-title">
+                <a href="" class="title">初探 Unity Ray Tracing 管线基础 | Intro To Unity Ray Tracing Pipeline Basics</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2025-01-17T08:29:06.000Z" itemprop="datePublished">2025-01-17</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/gamedev/">gamedev</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2024/12/UEShaderManagement/" class="title">UE 的宏定义 ShaderParameters</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2024-12-28T14:50:59.000Z" itemprop="datePublished">2024-12-28</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="../../../categories/programming/">programming</a> | <a class="category-link" href="../../../categories/programming/presentation-notes/">presentation notes</a>
+              </p>
+              <p class="item-title">
+                <a href="../../../2022/05/GTC2022-How-CUDA-Programming-Works/" class="title">GTC2022 Talk - How CUDA Programming Works</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2022-05-07T02:03:12.000Z" itemprop="datePublished">2022-05-07</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">1.</span> <span class="toc-text"> 实现思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA%E7%AE%A1%E7%BA%BF"><span class="toc-number">2.</span> <span class="toc-text"> 光线追踪管线</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#shader"><span class="toc-number">3.</span> <span class="toc-text"> Shader</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E6%9C%9F%E5%87%86%E5%A4%87"><span class="toc-number">3.1.</span> <span class="toc-text"> 前期准备</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ray-generation"><span class="toc-number">3.2.</span> <span class="toc-text"> Ray Generation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#miss-shader"><span class="toc-number">3.3.</span> <span class="toc-text"> Miss Shader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#closest-hit-shader"><span class="toc-number">3.4.</span> <span class="toc-text"> Closest Hit Shader</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#script"><span class="toc-number">4.</span> <span class="toc-text"> Script</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9C%BA%E6%99%AF%E5%8A%A0%E9%80%9F%E7%BB%93%E6%9E%84"><span class="toc-number">4.1.</span> <span class="toc-text"> 场景加速结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%B4%E6%8A%A4%E5%92%8C%E6%9B%B4%E6%96%B0-ray-tracing-shader-%E7%9A%84%E5%8F%82%E6%95%B0"><span class="toc-number">4.2.</span> <span class="toc-text"> 维护和更新 Ray Tracing Shader 的参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E8%A1%8C%E5%85%89%E7%BA%BF%E8%BF%BD%E8%B8%AA"><span class="toc-number">4.3.</span> <span class="toc-text"> 进行光线追踪</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B0%BE%E5%A3%B0"><span class="toc-number">5.</span> <span class="toc-text"> 尾声</span></a></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-UnityRayTracingPipeline" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      初探 Unity Ray Tracing 管线基础 | Intro To Unity Ray Tracing Pipeline Basics
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="" class="article-date">
+	  <time datetime="2025-01-17T08:29:06.000Z" itemprop="datePublished">2025-01-17</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="../../../categories/programming/">programming</a> | <a class="article-category-link" href="../../../categories/programming/gamedev/">gamedev</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="../../../tags/Unity/" rel="tag">Unity</a>, <a class="article-tag-link-link" href="../../../tags/ray-tracing/" rel="tag">ray tracing</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="#comments" class="article-comment-link">Comments</a></span>
+        
+	
+		<span class="post-wordcount hidden-xs" itemprop="wordCount">
+			Word Count: 1.5k (words)
+		</span>
+		
+			
+				<span class="post-readcount hidden-xs" itemprop="timeRequired">
+					Read Count: 6 (minutes)
+				</span>
+				
+					
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <p>Unity 里边很早就已经支持了光线追踪相关的功能，但是我找了半天都没能找到一个完整一点的入门教程，在此斗胆抛砖引玉，希望看到这里的好兄弟日后发达了之后别忘了小弟。</p>
+<p>本文在 Unity HDRP 的基础上实现了一个极简的光线追踪流程（其实并不强依赖 HDRP ，URP 也行）以让大伙能对 Unity Ray Tracing 管线有一个初步的了解，所覆盖的内容可能有所缺漏，日后或许会慢慢填坑。</p>
+<p><img src="correct.png" alt="correct.png" /></p>
+<h1 id="实现思路"><a class="markdownIt-Anchor" href="#实现思路"></a> 实现思路</h1>
+<p>使用 HDRP 的 Global Custom Pass Volume 在 Post Process 后插入了一个自定义的 Pass ，在这个 Pass 中实现了一个简单的光线追踪算法，把光追的结果画到了一个单独的 RenderTexture 上面后， Blit 到 Camera 的 RenderTarget 上。</p>
+<h1 id="光线追踪管线"><a class="markdownIt-Anchor" href="#光线追踪管线"></a> 光线追踪管线</h1>
+<p>当前 GPU 光线追踪的管线简单来说如下图所示：</p>
+<center><img src="https://d29g4g2dyqv443.cloudfront.net/sites/default/files/pictures/2018/dx12_rtx_tutorial/Images/ShaderPipeline.svg" style="max-height: 40vh" /></center>
+</br>
+<p>本文涉及的部分是上图中的 <code>Ray Generation, Miss, Closest Hit</code> 三个部分：</p>
+<ul>
+<li><code>Ray Generation</code> 是光追管线的入口，可以视为一个用于计算各个位置的 Shading 值的 Compute Shader，在其中可以通过调用 <code>TraceRay</code> 来进行光线追踪。</li>
+<li><code>Miss</code> 是光线追踪过程中没有击中任何物体时的处理程序</li>
+<li><code>Closest Hit</code> 是光线追踪过程中击中了物体时的处理程序</li>
+</ul>
+<p>在 Unity 中，<code>Ray Generation Shader</code> 和 <code>Miss Shader</code> 保存在 <code>.raytrace</code> 文件中，而 <code>Closest Hit Shader</code> 保存在 <code>.shader</code> 文件中。</p>
+<h1 id="shader"><a class="markdownIt-Anchor" href="#shader"></a> Shader</h1>
+<h2 id="前期准备"><a class="markdownIt-Anchor" href="#前期准备"></a> 前期准备</h2>
+<p>准备一个 <code>Common.hlsl</code> 用于存放一些公共的东西，比如下面这些常用的 include ：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;UnityRaytracingMeshUtils.cginc&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl&quot;</span></span></span><br></pre></td></tr></table></figure>
+<p>在光线追踪的管线中，存在着一个叫做 payload 的结构体会以类似引用的形式在不同的程序之间进行传递，我们同样在 <code>Common.hlsl</code> 里边定义一下它：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">DemoPayload</span> &#123;</span> float3 color; &#125;;</span><br><span class="line"></span><br><span class="line"><span class="function">DemoPayload <span class="title">GetInitializedPayload</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    DemoPayload payload;</span><br><span class="line">    payload.color = <span class="built_in">float3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);</span><br><span class="line">    <span class="keyword">return</span> payload;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="ray-generation"><a class="markdownIt-Anchor" href="#ray-generation"></a> Ray Generation</h2>
+<p>Ray Generation Shader 顾名思义是一个负责生成光线的入口程序，在 hlsl 中，他被 <code>[shader(&quot;raygeneration&quot;)]</code> 装饰标识。</p>
+<p>和常规的 Shader 一样，我们定义了一些常用的参数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">uint2  DispatchSize;</span><br><span class="line">float4x4 CameraInvProj;</span><br><span class="line">RWTexture2D&lt;float3&gt; RenderTarget;</span><br><span class="line">RaytracingAccelerationStructure AccelerationStructure;</span><br></pre></td></tr></table></figure>
+<p>其中的 <code>RenderTarget</code> 用于保存光线追踪的结果，<code>AccelerationStructure</code> 是我们创建的光线追踪场景的加速结构，<code>DispatchSize, CameraInvProj</code> 被用于根据 Dispatch 的像素位置重建相机射线：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">uint2 dispatchIdx = <span class="built_in">DispatchRaysIndex</span>().xy;</span><br><span class="line">float4 farPos = <span class="built_in">float4</span>((dispatchIdx + <span class="number">0.5f</span>) / <span class="built_in">float2</span>(DispatchSize.xy) * <span class="number">2</span> - <span class="number">1</span>, <span class="number">0.0</span>, <span class="number">1.0</span>);</span><br><span class="line">farPos = <span class="built_in">mul</span>(CameraInvProj, farPos);</span><br><span class="line">farPos /= farPos.w;</span><br><span class="line">float3 rayDir = <span class="built_in">normalize</span>(<span class="built_in">mul</span>(UNITY_MATRIX_I_V, farPos.xyz));</span><br></pre></td></tr></table></figure>
+<p>要进行光线追踪，我们需要填写 <code>RayDesc</code> 结构体以描述需要追踪的光线，并准备一个初始化过的 payload：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">RayDesc ray;</span><br><span class="line">ray.Origin = _WorldSpaceCameraPos;</span><br><span class="line">ray.Direction = rayDir;</span><br><span class="line">ray.TMin = <span class="number">0.0</span>;</span><br><span class="line">ray.TMax = FLT_MAX;</span><br><span class="line">DemoPayload payload = <span class="built_in">GetInitializedPayload</span>();</span><br></pre></td></tr></table></figure>
+<p>完成了以上步骤后，就可以调用 <code>TraceRay</code> 函数进行光线追踪，这个函数的定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Template&lt;<span class="keyword">payload_t</span>&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">TraceRay</span><span class="params">(RaytracingAccelerationStructure AccelerationStructure,</span></span></span><br><span class="line"><span class="params"><span class="function">              uint RayFlags,</span></span></span><br><span class="line"><span class="params"><span class="function">              uint InstanceInclusionMask,</span></span></span><br><span class="line"><span class="params"><span class="function">              uint RayContributionToHitGroupIndex,</span></span></span><br><span class="line"><span class="params"><span class="function">              uint MultiplierForGeometryContributionToHitGroupIndex,</span></span></span><br><span class="line"><span class="params"><span class="function">              uint MissShaderIndex,</span></span></span><br><span class="line"><span class="params"><span class="function">              RayDesc Ray,</span></span></span><br><span class="line"><span class="params"><span class="function">              inout <span class="keyword">payload_t</span> Payload)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>在本文中，我们暂时忽略其它参数，只关注基础的 <code>AccelerationStructure, Ray, Payload</code> 三个参数：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">TraceRay</span>(AccelerationStructure, RAY_FLAG_NONE, <span class="number">0xFF</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, ray, payload);</span><br></pre></td></tr></table></figure>
+<p>最后，我们将得到的结果写回 RenderTarget 中：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RenderTarget[dispatchIdx] = payload.color;</span><br></pre></td></tr></table></figure>
+<h2 id="miss-shader"><a class="markdownIt-Anchor" href="#miss-shader"></a> Miss Shader</h2>
+<p>Miss Shader 是光线追踪过程中没有击中任何物体时的处理程序，在本文中，我们简单的把光线的颜色设置为黑色：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[<span class="built_in">shader</span>(<span class="string">&quot;miss&quot;</span>)]</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">DemoMissShader</span><span class="params">(inout DemoPayload payload)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    payload.color = <span class="built_in">float3</span>(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="closest-hit-shader"><a class="markdownIt-Anchor" href="#closest-hit-shader"></a> Closest Hit Shader</h2>
+<p>在 Unity 中，Closest Hit Shader 是光线追踪过程中，在找到最近交点的物体根据物体的材质执行的程序。它一般出现在 ShaderLab 的一个单独的光线追踪 Pass 中：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Pass</span><br><span class="line">&#123;</span><br><span class="line">    Name <span class="string">&quot;DemoRayTracing&quot;</span></span><br><span class="line">    Tags &#123; <span class="string">&quot;LightMode&quot;</span> = <span class="string">&quot;RayTracing&quot;</span> &#125;</span><br><span class="line"></span><br><span class="line">    HLSLPROGRAM</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;RTCommon.hlsl&quot;</span></span></span><br><span class="line">    [<span class="built_in">shader</span>(<span class="string">&quot;closesthit&quot;</span>)]</span><br><span class="line">    <span class="keyword">void</span> <span class="built_in">DemoClosestHitShader</span>(inout DemoPayload payload : SV_RayPayload, in BuiltInTriangleIntersectionAttributes attr)</span><br><span class="line">    &#123;</span><br><span class="line">        payload.color = <span class="built_in">frac</span>(payload.posWS);</span><br><span class="line">    &#125;</span><br><span class="line">    ENDHLSL</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="script"><a class="markdownIt-Anchor" href="#script"></a> Script</h1>
+<p>在本文中，C# 端只需要一个简单的 CustomPass，在其中需要干这么几件事：</p>
+<ol>
+<li>创建和更新光追的场景加速结构</li>
+<li>维护和更新 Ray Tracing Shader 的参数</li>
+<li>Dispatch Ray Tracing Shader 并把结果 Blit 到 Camera 的 RenderTarget 上</li>
+</ol>
+<h2 id="场景加速结构"><a class="markdownIt-Anchor" href="#场景加速结构"></a> 场景加速结构</h2>
+<p>在 <code>Setup</code> 阶段，配置并创建一个 <code>RayTracingAccelerationStructure</code> ：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">var setting = new RayTracingAccelerationStructure.Settings(RayTracingAccelerationStructure.ManagementMode.Automatic,</span><br><span class="line">                                                            RayTracingAccelerationStructure.RayTracingModeMask.Everything, 0xFF);</span><br><span class="line">m_RTAS = new RayTracingAccelerationStructure(setting);</span><br></pre></td></tr></table></figure>
+<p>并在 <code>Execute</code> 阶段构建它：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cmd.BuildRayTracingAccelerationStructure(m_RTAS);</span><br></pre></td></tr></table></figure>
+<p>如果场景是静态的话，不需要每帧都重复更新加速结构，而只需要构建一次就可以了。</p>
+<h2 id="维护和更新-ray-tracing-shader-的参数"><a class="markdownIt-Anchor" href="#维护和更新-ray-tracing-shader-的参数"></a> 维护和更新 Ray Tracing Shader 的参数</h2>
+<p>比较基础的一些操作，我们需要维护一个尺寸和相机一样的 RenderTexture 作为临时输出，并且基于 <code>context</code> 中的 camera 信息拿到相机的投影参数。这里就不贴代码了。</p>
+<h2 id="进行光线追踪"><a class="markdownIt-Anchor" href="#进行光线追踪"></a> 进行光线追踪</h2>
+<p>在 <code>Execute</code> 阶段，除了和 Comput Shader 类似的 Shader 参数之外，还需要指定对应的 ShaderLab 中的 Pass 名称。</p>
+<p>设置完成后，使用 <code>cmd.DispatchRays</code> 就可以根据指定的 <code>RayGenerationShader</code> 进行光线追踪了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cmd.SetRayTracingShaderPass(m_RTShader, &quot;DemoRayTracing&quot;);</span><br><span class="line">cmd.DispatchRays(m_RTShader, &quot;DemoRayGenShader&quot;, (uint)w, (uint)h, 1);</span><br></pre></td></tr></table></figure>
+<p>最后别忘了把结果 Blit 到 Camera 的 RenderTarget 上：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cmd.Blit(m_Target, ctx.cameraColorBuffer);</span><br></pre></td></tr></table></figure>
+<h1 id="尾声"><a class="markdownIt-Anchor" href="#尾声"></a> 尾声</h1>
+<p>至此你已经成功地完成了一个最简单的光线追踪管线了！可喜可贺可喜可贺。但我发现在 Unity Reload 之后，有一定的概率出现渲染结果和相机位置对不上的问题，目前还没有找到原因，但似乎进入 Play Mode 就没有这个问题，比较的神秘。</p>
+<p><img src="wierd-error.png" alt="wierd-error.png" /></p>
+<p>本文只是实现了一个最基础的光线追踪管线，还没有覆盖到实际的 Ray Flag / Any Hit / Intersection / Hit Attribute 等等内容，希望在不久的将来能有机会把坑填上。</p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/" title="初探 Unity Ray Tracing 管线基础 | Intro To Unity Ray Tracing Pipeline Basics" target="_blank" rel="external">https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/APassbyDreg" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="../../../images/avatar.png" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/APassbyDreg" target="_blank"><span class="text-dark">Martin Z He</span><small class="ml-1x">咕咕咕</small></a></h3>
+        <div></div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    
+    <li class="next">
+      <a href="../../../2024/12/UEShaderManagement/" title="UE 的宏定义 ShaderParameters"><span>Older&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="Table of Contents" role="button">
+        <span>[&nbsp;</span><span>Table of Contents</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>$</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>Maybe you could buy me a cup of coffee.</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/alipayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open alipay app scan this qrcode, buy me a coffee!</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="../../../images/donate/wechatpayimg.png" alt="Scan Qrcode" title="Scan" />
+              </div>
+              <p class="text-muted mv">Scan this qrcode</p>
+              <p class="text-grey">Open wechat app scan this qrcode, buy me a coffee!</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> alipay</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> wechat payment</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <script>
+        
+    </script>
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/APassbyDreg"  target="_blank" title="GitHub" data-toggle=tooltip data-placement=top><i class="custom-icon icon-github-line"></i></a></li>
+        
+        <li><a href="https://space.bilibili.com/8020246"  target="_blank" title="BiliBili" data-toggle=tooltip data-placement=top><i class="custom-icon icon-bilibili-line"></i></a></li>
+        
+        <li><a href="/atom.xml"  target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="custom-icon icon-rss-line"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="../../../js/plugin.min.js"></script>
+
+
+<script src="../../../js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '../../../content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="../../../js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

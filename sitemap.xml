@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://blog.apassbydreg.work/2025/01/UnityRayTracingPipeline/</loc>
+    
+    <lastmod>2025-01-19</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.apassbydreg.work/2021/11/UnitySmoothFollowingCamera/</loc>
+    
+    <lastmod>2025-01-17</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.apassbydreg.work/2024/12/UEShaderManagement/</loc>
+    
+    <lastmod>2024-12-28</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://blog.apassbydreg.work/2022/03/GPP-ch01/</loc>
     
     <lastmod>2022-05-07</lastmod>
@@ -310,13 +331,6 @@
   </url>
   
   <url>
-    <loc>https://blog.apassbydreg.work/2021/11/UnitySmoothFollowingCamera/</loc>
-    
-    <lastmod>2021-11-04</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://blog.apassbydreg.work/2021/10/PBRT-ch04/</loc>
     
     <lastmod>2021-11-04</lastmod>
@@ -375,7 +389,7 @@
 
   <url>
     <loc>https://blog.apassbydreg.work/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -383,133 +397,147 @@
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/visualization/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/web/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/CG/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/render/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/GDC-talks/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/OOP/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/Game-Programming-Patterns/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/GPU-Gems-3/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/GTC/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/CUDA/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/GPU-Programming/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/C/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/%E6%B7%B1%E5%BA%A6%E6%8E%A2%E7%B4%A2C-%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/OBR/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/PBRT/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/RTR/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/Unity/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/tags/FX/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://blog.apassbydreg.work/tags/GameLogic/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <loc>https://blog.apassbydreg.work/tags/UnrealEngine/</loc>
+    <lastmod>2025-01-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.apassbydreg.work/tags/ray-tracing/</loc>
+    <lastmod>2025-01-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.apassbydreg.work/tags/game-logic/</loc>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
@@ -518,35 +546,35 @@
   
   <url>
     <loc>https://blog.apassbydreg.work/categories/programming/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/categories/programming/reading-notes/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/categories/programming/projects/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/categories/programming/presentation-notes/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://blog.apassbydreg.work/categories/programming/gamedev/</loc>
-    <lastmod>2024-09-16</lastmod>
+    <lastmod>2025-01-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
